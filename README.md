@@ -20,11 +20,12 @@ from there.
 ### Publishing it
 
 The file is self-contained with no external requests, so any static host works.
-For GitHub Pages: Settings → Pages → deploy from branch, root. The page then
-lives at `https://<user>.github.io/hard75/`.
+This repo is public, so GitHub Pages is free: Settings → Pages → deploy from
+branch `main`, root. The page then lives at
+`https://dranug1995.github.io/hard75/`.
 
-If the repo is private, GitHub Pages needs a paid plan — otherwise use any
-static host, or just keep opening the file locally.
+Publishing the page publishes no data — the logging lives in the browser of
+whoever opens it, so a hosted copy starts empty for everyone including you.
 
 ## Where the data lives
 
