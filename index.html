@@ -488,17 +488,48 @@
       // shallow merge so an older save never loses new fields
       for (var k in d) if (!(k in p)) p[k] = d[k];
       for (var s in d.settings) if (!(s in p.settings)) p.settings[s] = d.settings[s];
-      return p;
+      return normalize(p);
     } catch (e) {
       return defaults();
     }
   }
 
+  /* Day records get read in a dozen places that assume `workouts` is a pair of
+     objects. Fix the shape once on the way in, rather than defending at every
+     use — one hand-edited or half-written backup shouldn't take the app down. */
+  function normalize(st) {
+    if (!st.days || typeof st.days !== "object" || Array.isArray(st.days)) st.days = {};
+    if (!Array.isArray(st.history)) st.history = [];
+    for (var k in st.days) {
+      var d = st.days[k];
+      if (!d || typeof d !== "object") { delete st.days[k]; continue; }
+      if (!Array.isArray(d.workouts) || d.workouts.length !== 2) d.workouts = blankDay().workouts;
+      for (var i = 0; i < 2; i++) {
+        var w = d.workouts[i];
+        if (!w || typeof w !== "object") w = d.workouts[i] = { type: "", min: 0, outdoor: false };
+        w.min = Math.max(0, +w.min || 0);
+        w.outdoor = !!w.outdoor;
+        w.type = w.type == null ? "" : String(w.type);
+      }
+      d.water = Math.max(0, Math.min(WATER_UNITS, +d.water || 0));
+    }
+    return st;
+  }
+
+  /* Storage can be blocked outright (private browsing, a full quota). Say so
+     once and then stay quiet: save() runs on every keystroke, so anything
+     modal here would bury the page under dialogs mid-sentence. */
+  var storageBroken = false;
   function save() {
     try {
       localStorage.setItem(KEY, JSON.stringify(S));
     } catch (e) {
-      alert("Could not save. Your browser storage may be full or blocked in private browsing.");
+      if (!storageBroken) {
+        storageBroken = true;
+        banner('<div><b>Not saving.</b> Storage is full or blocked in this browser, ' +
+          'so nothing you log here will survive a reload. Export while the page is still open.</div>');
+        if (view === "today") render();
+      }
     }
   }
 
@@ -513,6 +544,14 @@
   function dayNum(ds) { return diffDays(S.startDate, ds) + 1; }
   function endDate() { return addDays(S.startDate, TOTAL - 1); }
 
+  /* Yesterday stays editable, but as a temporary mode held in memory — never by
+     rewriting what the app thinks the date is. `today()` stays the real date
+     everywhere else, so the calendar, the stats and the fail flow can't be
+     fooled, and a reload always lands you back on today. */
+  var editDay = null;
+  function activeDay() { return editDay || today(); }
+  function canEditDay(ds) { var t = today(); return ds === t || ds === addDays(t, -1); }
+
   var DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   function longDate(s) {
@@ -526,7 +565,10 @@
     return {
       noAlcohol: false, diet: false, noCheat: false, photo: false,
       water: 0,
-      workouts: [{ type: "", min: 0, outdoor: false }, { type: "", min: 0, outdoor: true }],
+      /* Both start indoors. The outdoors requirement is one of the four rules
+         that's meant to be earned rather than declared, so it can't be the
+         state you land in by not touching anything. */
+      workouts: [{ type: "", min: 0, outdoor: false }, { type: "", min: 0, outdoor: false }],
       book: "", pageFrom: null, pageTo: null,
       weight: null, notes: ""
     };
@@ -557,6 +599,16 @@
   function pagesRead(d) {
     if (d.pageFrom == null || d.pageTo == null) return 0;
     return Math.max(0, d.pageTo - d.pageFrom);
+  }
+
+  /* The start page is inherited from yesterday, so the first day of a new book
+     reads as a negative span and silently scores zero. Say why. */
+  function pagesNote(d) {
+    if (d.pageFrom != null && d.pageTo != null && d.pageTo < d.pageFrom) {
+      return '<span style="color:var(--fail)">Finished before you started — ' +
+        'if this is a new book, set the start page back to where you opened it.</span>';
+    }
+    return '<span class="muted">Tomorrow starts where you stopped, with the same book already filled in.</span>';
   }
 
   function hasDay(ds) { return Object.prototype.hasOwnProperty.call(S.days, ds); }
@@ -598,15 +650,25 @@
 
   /* ============================ photos (IndexedDB) ============================ */
 
+  /* IndexedDB is restricted on file:// in some browsers and absent in others.
+     When it's gone the photo rule would be permanently unsatisfiable, so the
+     app falls back to an honest tick-box instead of holding the day hostage. */
+  var photoStore = true;
+
   var dbp = null;
   function db() {
     if (!dbp) {
       dbp = new Promise(function (res, rej) {
-        var r = indexedDB.open("hard75", 1);
+        if (!window.indexedDB) { rej(new Error("no storage")); return; }
+        var r;
+        try { r = indexedDB.open("hard75", 1); }
+        catch (e) { rej(e); return; }
         r.onupgradeneeded = function () { r.result.createObjectStore("photos"); };
         r.onsuccess = function () { res(r.result); };
         r.onerror = function () { rej(r.error); };
+        r.onblocked = function () { rej(new Error("storage blocked")); };
       });
+      dbp.catch(function () { photoStore = false; });
     }
     return dbp;
   }
@@ -653,10 +715,15 @@
 
   /* ============================ meal helpers ============================ */
 
+  /* Anchored to the Monday of the week day 1 falls in, not to day 1 itself.
+     The cook windows are Mon–Wed and Thu–Sun, so a rotation that flipped on
+     day 8 rather than on a Monday would split a cook from the days it feeds —
+     which is exactly what happens after a fail restarts you on a Thursday. */
   function weekIndex(ds) {
-    var n = dayNum(ds);
-    if (n < 1) n = 1;
-    return Math.floor((n - 1) / 7);
+    var s = parseISO(S.startDate);
+    var monday = addDays(S.startDate, -((s.getDay() + 6) % 7));
+    var n = diffDays(monday, ds);
+    return Math.floor((n < 0 ? 0 : n) / 7);
   }
 
   function rotationFor(ds) {
@@ -668,6 +735,14 @@
     var dw = parseISO(ds).getDay(); // 0 Sun … 6 Sat
     var r = rotationFor(ds);
     return (dw >= 1 && dw <= 3) ? r.cook1 : r.cook2;
+  }
+
+  /* What you're about to cook, as opposed to what you're eating. A cook always
+     feeds the window that starts the next morning, so the cook you do tonight
+     is whatever tomorrow eats — which lands on the right rotation by itself. */
+  function cookOn(ds) {
+    var next = addDays(ds, 1);
+    return { rot: rotationFor(next), cook: cookForDate(next), covers: next };
   }
 
   function mealsFor(ds) {
@@ -691,6 +766,39 @@
   /* ============================ calendar file ============================ */
 
   function icsEscape(s) { return String(s).replace(/([,;\\])/g, "\\$1").replace(/\n/g, "\\n"); }
+
+  /* RFC 5545 caps a content line at 75 octets and continues it with CRLF plus a
+     single space. Strict importers reject the long DESCRIPTION lines otherwise,
+     and the split has to count bytes, not characters — one em dash is three. */
+  function octets(s) {
+    var n = 0, i, c;
+    for (i = 0; i < s.length; i++) {
+      c = s.charCodeAt(i);
+      if (c < 0x80) n += 1;
+      else if (c < 0x800) n += 2;
+      else if (c >= 0xD800 && c <= 0xDBFF) { n += 4; i++; }   // surrogate pair
+      else n += 3;
+    }
+    return n;
+  }
+
+  function icsFold(line) {
+    if (octets(line) <= 75) return line;
+    var out = "", cur = "", limit = 75, i, ch;
+    for (i = 0; i < line.length; i++) {
+      ch = line[i];
+      if (ch.charCodeAt(0) >= 0xD800 && ch.charCodeAt(0) <= 0xDBFF && i + 1 < line.length) {
+        ch += line[++i];
+      }
+      if (octets(cur) + octets(ch) > limit) {
+        out += cur + "\r\n ";
+        cur = "";
+        limit = 74;            // the leading space costs one of the 75 octets
+      }
+      cur += ch;
+    }
+    return out + cur;
+  }
 
   function buildICS() {
     var stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
@@ -734,9 +842,11 @@
     for (i = 0; i < 7; i++) { if (parseISO(addDays(S.startDate, i)).getDay() === 3) { firstWed = addDays(S.startDate, i); break; } }
 
     ev(uidBase + "-cook1@h75", firstSun.replace(/-/g, "") + "T160000", "FREQ=WEEKLY;BYDAY=SU;COUNT=11",
-       "75 Hard — Sunday cook (Mon–Wed)", "21 servings. Shopping list is in the app under Meals.", true);
+       "75 Hard — Sunday cook (Mon–Wed)",
+       "18 cooked servings, plus 3 no-cook breakfasts. Shopping list is in the app under Meals.", true);
     ev(uidBase + "-cook2@h75", firstWed.replace(/-/g, "") + "T180000", "FREQ=WEEKLY;BYDAY=WE;COUNT=11",
-       "75 Hard — Wednesday cook (Thu–Sun)", "28 servings. Shopping list is in the app under Meals.", true);
+       "75 Hard — Wednesday cook (Thu–Sun)",
+       "24 cooked servings, plus 4 no-cook breakfasts. Shopping list is in the app under Meals.", true);
 
     ev(uidBase + "-backup@h75", addDays(S.startDate, 6).replace(/-/g, "") + "T200000", "FREQ=WEEKLY;COUNT=11",
        "75 Hard — back up your data",
@@ -747,7 +857,7 @@
            "SUMMARY:Day 75 — 75 Hard complete", "END:VEVENT");
 
     L.push("END:VCALENDAR");
-    return L.join("\r\n");
+    return L.map(icsFold).join("\r\n");
   }
 
   function shoppingText(key) {
@@ -805,14 +915,23 @@
     return !!(window.claude && typeof window.claude.use === "function");
   }
 
-  function offerFile(name, text, mime, okNote) {
-    if (!hosted()) { nativeDownload(name, text, mime); if (okNote) banner(okNote); return; }
+  /* onSaved fires only when the bytes actually reached the user. The export
+     nag is the only thing standing between a cleared cache and a lost streak,
+     so a declined or failed save must never be recorded as a backup. */
+  function offerFile(name, text, mime, okNote, onSaved) {
+    if (!hosted()) {
+      nativeDownload(name, text, mime);
+      if (onSaved) onSaved();
+      if (okNote) banner(okNote);
+      return;
+    }
 
     window.claude.use("downloads").then(function (dl) {
-      if (!dl) { nativeDownload(name, text, mime); return; }
+      if (!dl) { nativeDownload(name, text, mime); if (onSaved) onSaved(); return; }
       var isIcs = /\.ics$/.test(name);
       var safe = isIcs ? name.replace(/\.ics$/, "-calendar.txt") : name;
       return dl.save({ filename: safe, data: text }).then(function () {
+        if (onSaved) onSaved();
         banner(isIcs
           ? '<div>Saved as <b>' + esc(safe) + '</b>. Rename it to <b>' +
             esc(name) + '</b>, then open it to import the reminders.</div>'
@@ -888,7 +1007,7 @@
   /* ---------- today ---------- */
 
   function viewToday() {
-    var ds = today(), n = dayNum(ds);
+    var ds = activeDay(), n = dayNum(ds);
 
     if (!S.setupDone) return viewSetup();
 
@@ -903,12 +1022,23 @@
     }
 
     var d = getDay(ds), c = checks(d);
-    var editable = true;
     var h = "";
+
+    if (editDay) {
+      h += '<div class="banner warn"><div>Editing <b>' + esc(longDate(editDay)) +
+        '</b> — yesterday. Today is untouched. ' +
+        '<a href="#" data-act="back-to-today" style="color:var(--accent)">Back to today</a>.</div></div>';
+    }
+
+    if (storageBroken) {
+      h += '<div class="banner warn" style="border-left-color:var(--fail)"><div><b>Not saving.</b> ' +
+        'Storage is blocked or full in this browser — nothing here survives a reload. ' +
+        '<a href="#" data-act="go-setup" style="color:var(--accent)">Export now</a>.</div></div>';
+    }
 
     // backup nudge
     var lb = S.settings.lastBackupAt;
-    if (n > 3 && (!lb || diffDays(lb, ds) >= 7)) {
+    if (!editDay && n > 3 && (!lb || diffDays(lb, ds) >= 7)) {
       h += '<div class="banner warn"><div>No backup ' +
         (lb ? "since " + esc(longDate(lb)) : "yet") +
         '. Clearing site data would wipe ' + (n - 1) + ' days. ' +
@@ -920,7 +1050,8 @@
 
     // checkbox tasks
     var rows = TASKS.map(function (t) {
-      return '<button class="task" data-act="toggle" data-k="' + t.k + '" data-on="' + (d[t.k] ? 1 : 0) + '">' +
+      return '<button class="task" data-act="toggle" data-k="' + t.k + '" data-on="' + (d[t.k] ? 1 : 0) + '"' +
+        ' aria-pressed="' + (d[t.k] ? "true" : "false") + '">' +
         '<span class="box">&#10003;</span>' +
         '<span class="task-t"><b>' + esc(t.t) + '</b><em>' + esc(t.s) + '</em></span>' +
         '</button>';
@@ -931,6 +1062,7 @@
     var drops = "";
     for (var i = 0; i < WATER_UNITS; i++) {
       drops += '<button class="drop" data-act="water" data-i="' + i + '" data-on="' + (i < d.water ? 1 : 0) + '"' +
+        ' aria-pressed="' + (i < d.water ? "true" : "false") + '"' +
         ' aria-label="' + ((i + 1) * 0.5) + ' litres">' + ((i + 1) % 2 === 0 ? ((i + 1) / 2) + "L" : "") + '</button>';
     }
     h += '<div class="card">' +
@@ -952,7 +1084,8 @@
           '<input type="text" data-act="wo-type" data-i="' + idx + '" placeholder="What did you do?" value="' + esc(w.type) + '">' +
           '<input type="number" data-act="wo-min" data-i="' + idx + '" inputmode="numeric" min="0" max="600" placeholder="min" value="' + (w.min || "") + '">' +
         '</div>' +
-        '<button class="chip" data-act="wo-out" data-i="' + idx + '" data-on="' + (w.outdoor ? 1 : 0) + '" style="align-self:flex-start">' +
+        '<button class="chip" data-act="wo-out" data-i="' + idx + '" data-on="' + (w.outdoor ? 1 : 0) + '"' +
+        ' aria-pressed="' + (w.outdoor ? "true" : "false") + '" style="align-self:flex-start">' +
           (w.outdoor ? "&#9679; Outdoors" : "Indoors") + '</button>' +
         '</div>';
     }).join("");
@@ -977,19 +1110,24 @@
           '<div class="field"><label>Read to page</label>' +
             '<input type="number" inputmode="numeric" min="0" data-act="pto" placeholder="—" value="' + (d.pageTo != null ? d.pageTo : "") + '"></div>' +
         '</div>' +
-        '<div class="small muted">Tomorrow starts where you stopped, with the same book already filled in.</div>' +
+        '<div class="small" id="pages-note">' + pagesNote(d) + '</div>' +
       '</div></div>';
 
     // photo + weight + notes
     h += '<div class="card">' +
       '<div class="card-h"><span class="eyebrow">Progress photo</span>' +
-      '<span class="small muted">' + (d.photo ? "Saved on this device" : "Not taken") + '</span></div>' +
+      '<span class="small muted">' + (d.photo ? (photoStore ? "Saved on this device" : "Marked as taken") : "Not taken") + '</span></div>' +
       '<div class="card-b">' +
         '<div id="photo-slot"></div>' +
         '<label class="btn" style="text-align:center;cursor:pointer">' +
           (d.photo ? "Replace photo" : "Take / choose photo") +
           '<input type="file" accept="image/*" capture="environment" data-act="photo" style="display:none">' +
         '</label>' +
+        (photoStore ? "" :
+          '<div class="small muted">This browser won\'t let the page store images — ' +
+          'common when the file is opened straight from disk. Keep taking the photo in your ' +
+          'camera roll and tick <b>Progress photo</b> above by hand, or serve the file over ' +
+          'http:// to store them here.</div>') +
       '</div></div>';
 
     h += '<div class="card"><div class="card-b">' +
@@ -999,7 +1137,11 @@
         '<textarea data-act="notes" placeholder="How it went, what was hard, what to change.">' + esc(d.notes) + '</textarea></div>' +
       '</div></div>';
 
-    h += '<button class="btn btn-danger" data-act="fail">I missed something today</button>';
+    /* The fail flow always acts on the real today, so it has no business being
+       reachable while you're back-filling yesterday. */
+    h += editDay
+      ? '<button class="btn" data-act="back-to-today">Done — back to today</button>'
+      : '<button class="btn btn-danger" data-act="fail">I missed something today</button>';
 
     return h;
   }
@@ -1007,7 +1149,7 @@
   function loadTodayPhoto() {
     var slot = document.getElementById("photo-slot");
     if (!slot) return;
-    var ds = today();
+    var ds = activeDay();
     if (!S.days[ds] || !S.days[ds].photo) { slot.innerHTML = ""; return; }
     getPhoto(ds).then(function (b) {
       if (!b) { slot.innerHTML = '<div class="small muted">Photo record found but the image is missing.</div>'; return; }
@@ -1064,8 +1206,7 @@
   function openDay(ds) {
     var d = hasDay(ds) ? S.days[ds] : blankDay();
     var c = checks(d);
-    var t = today();
-    var canEdit = (ds === t || ds === addDays(t, -1));
+    var canEdit = canEditDay(ds);
     var list = [
       ["No alcohol", c.noAlcohol], ["Diet", c.diet], ["No cheat meals", c.noCheat],
       ["Water 4 L", c.water], ["2 × 45 min, one outdoors", c.workouts],
@@ -1100,7 +1241,14 @@
     var ds = today();
     if (dayNum(ds) < 1) ds = S.startDate;
     var r = rotationFor(ds), cook = cookForDate(ds), ms = mealsFor(ds);
-    var wk = Math.max(1, Math.ceil(dayNum(ds) / 7));
+    var wk = weekIndex(ds) + 1;
+
+    /* The list you need is the one for the cook you're about to do, not the one
+       you're eating out of. Cook nights are Sunday and Wednesday, so from the
+       day before onwards the Meals tab switches to the upcoming batch. */
+    var prep = null;
+    if (isCookDay(ds)) prep = { when: "tonight", plan: cookOn(ds) };
+    else if (isCookDay(addDays(ds, 1))) prep = { when: "tomorrow", plan: cookOn(addDays(ds, 1)) };
 
     /* Alternates are choices, not extra meals — they never count toward totals. */
     var eaten = ms.filter(function (m) { return !m.alt; });
@@ -1132,12 +1280,15 @@
         '</div></div>';
     }).join("");
 
-    var shopKey = r.id + (cook === r.cook1 ? "1" : "2");
+    var shopRot = prep ? prep.plan.rot : r;
+    var shopCook = prep ? prep.plan.cook : cook;
+    var shopKey = shopRot.id + (shopCook === shopRot.cook1 ? "1" : "2");
     var shop = SHOPPING[shopKey];
     var shopHtml = "";
     if (shop) {
       shopHtml = '<div class="card">' +
-        '<div class="card-h"><span class="eyebrow">Shopping list</span>' +
+        '<div class="card-h"><span class="eyebrow">Shopping list' +
+          (prep ? " · for " + esc(prep.when) + "'s cook" : "") + '</span>' +
           '<span class="small muted">' + shop.servings + ' servings</span></div>' +
         '<div class="card-b">' +
           shop.groups.map(function (g) {
@@ -1153,9 +1304,31 @@
         '</div></div>';
     } else {
       shopHtml = '<div class="card"><div class="card-b"><div class="small muted">' +
-        'Full quantities for rotation ' + esc(r.id) + ' are in <b>hard75/meal-plan.md</b> in the repo. ' +
-        'They scale from the per-serving amounts above &times; ' + cook.servings + ' servings.' +
+        'Full quantities for rotation ' + esc(shopRot.id) + ' are in <b>hard75/meal-plan.md</b> in the repo. ' +
+        'They scale from the per-serving amounts above &times; ' + shopCook.servings + ' servings.' +
         '</div></div></div>';
+    }
+
+    /* What's actually on the stove tonight, listed by recipe and count. */
+    var prepHtml = "";
+    if (prep) {
+      var pc = prep.plan.cook, pr = prep.plan.rot;
+      prepHtml = '<div class="card" style="border-color:var(--accent)">' +
+        '<div class="card-h"><span class="eyebrow">Cooking ' + esc(prep.when) + '</span>' +
+          '<span class="small num">' + pc.servings + ' servings</span></div>' +
+        '<div class="card-b">' +
+          '<div class="small"><b>' + esc(pc.day) + '</b> cook · rotation ' + esc(pr.id) +
+          ' — covers <b>' + esc(pc.covers) + '</b>. ' +
+          (pc.day === "Sunday" ? "~70 min." : "~100 min.") + '</div>' +
+          '<div>' + pc.meals.map(function (m) {
+            return '<div class="small" style="display:flex;justify-content:space-between;gap:10px;' +
+              'padding:4px 0;border-bottom:1px solid var(--line)">' +
+              '<span>' + esc(m.name) + '</span>' +
+              '<span class="muted">' + esc(m.slot) + '</span></div>';
+          }).join("") + '</div>' +
+          '<div class="small muted">The shopping list below is this cook\'s, not the one ' +
+          'you\'re eating out of today.</div>' +
+        '</div></div>';
     }
 
     return '<div class="card">' +
@@ -1175,7 +1348,7 @@
           ' cooked servings (' + cook.meals.length + ' recipes), with the remaining breakfasts taken ' +
           'as the no-cook bowl. Sunday runs ~70 min, Wednesday ~100 min.' +
         '</div></div></div>' +
-      shopHtml;
+      prepHtml + shopHtml;
   }
 
   /* ---------- stats ---------- */
@@ -1190,7 +1363,9 @@
       if (ds > t || !hasDay(ds)) continue;
       d = S.days[ds];
       if (isComplete(d)) done++;
-      water += d.water * 0.5; waterDays++;
+      /* A day you opened but never logged would otherwise drag the average
+         down as if you'd drunk nothing that day. */
+      if (touched(d)) { water += d.water * 0.5; waterDays++; }
       pages += pagesRead(d);
       if (d.book && books.indexOf(d.book) === -1) books.push(d.book);
       d.workouts.forEach(function (w) {
@@ -1232,10 +1407,15 @@
     if (S.history.length) {
       hist = '<div class="card"><div class="card-h"><span class="eyebrow">Previous attempts</span></div>' +
         '<div class="scroll-x"><table class="hist"><thead><tr>' +
-        '<th>#</th><th>Started</th><th>Got to</th><th>Broke on</th></tr></thead><tbody>' +
+        '<th>#</th><th>Started</th><th>Got to</th><th>Clean</th><th>Broke on</th></tr></thead><tbody>' +
         S.history.map(function (h) {
+          /* Older saves only carried daysCompleted, which counted elapsed days. */
+          var reached = h.reachedDay != null ? h.reachedDay : h.daysCompleted;
+          var clean = h.reachedDay != null ? h.daysCompleted : null;
           return '<tr><td class="n">' + h.attempt + '</td><td class="n">' + esc(h.start) + '</td>' +
-            '<td class="n">Day ' + h.daysCompleted + '</td><td>' + esc(h.reason || "—") + '</td></tr>';
+            '<td class="n">Day ' + reached + '</td>' +
+            '<td class="n">' + (clean == null ? "—" : clean) + '</td>' +
+            '<td>' + esc(h.reason || "—") + '</td></tr>';
         }).join("") +
         '</tbody></table></div></div>';
     }
@@ -1335,14 +1515,25 @@
 
   function doFail(reason) {
     var t = today();
+    var complete = 0, k;
+    for (k in S.days) if (k <= t && isComplete(S.days[k])) complete++;
+
     undoSnapshot = JSON.parse(JSON.stringify(S));
     S.history.unshift({
       attempt: S.attempt, start: S.startDate, failedOn: t,
-      reason: reason, daysCompleted: Math.max(0, dayNum(t) - 1)
+      reason: reason,
+      reachedDay: Math.max(0, dayNum(t) - 1),
+      daysCompleted: complete,
+      /* Keep the records. Weights and notes across a failed run are the part
+         of this that's worth more at day 150 than it was at day 30 — and the
+         photos in IndexedDB are keyed by date, so throwing the days away
+         orphaned them with nothing left pointing at them. */
+      days: S.days
     });
     S.attempt += 1;
     S.startDate = addDays(t, 1);
     S.days = {};
+    editDay = null;
     save();
     closeDialog();
     view = "today";
@@ -1350,10 +1541,16 @@
     banner('Reset to day 1. <a href="#" data-act="undo" style="color:var(--accent)">Undo</a>');
   }
 
-  var bannerTimer = null;
+  /* One toast at a time, each owning its own timer. A single shared timer meant
+     the second toast cancelled the first one's removal and left it on screen
+     for good — including the undo prompt, long after undo had been used. */
   function banner(html) {
+    var prev = document.querySelector("body > .toast");
+    if (prev) prev.remove();
+
     var el = document.createElement("div");
-    el.className = "banner warn";
+    el.className = "banner warn toast";
+    el.setAttribute("role", "status");
     // pointer-events:none so a toast never blocks the controls underneath it;
     // its own links opt back in.
     el.style.cssText = "position:fixed;left:12px;right:12px;bottom:70px;z-index:30;max-width:536px;" +
@@ -1363,8 +1560,7 @@
       a.style.pointerEvents = "auto";
     });
     document.body.appendChild(el);
-    clearTimeout(bannerTimer);
-    bannerTimer = setTimeout(function () { el.remove(); }, 12000);
+    setTimeout(function () { el.remove(); }, 12000);
   }
 
   /* ============================ events ============================ */
@@ -1372,14 +1568,16 @@
   document.addEventListener("click", function (e) {
     var el = e.target.closest("[data-act], [data-nav]");
     if (!el) return;
-    var act = el.dataset.act, ds = today(), d;
+    var act = el.dataset.act, ds = today(), ad = activeDay(), d;
 
     if (el.dataset.nav) { view = el.dataset.nav; render(); return; }
 
     switch (act) {
       case "toggle":
-        d = getDay(ds);
-        if (el.dataset.k === "photo" && !d.photo) {
+        d = getDay(ad);
+        /* The photo box ticks itself once an image is stored. Where the browser
+           won't store images at all, it goes back to being a plain tick. */
+        if (el.dataset.k === "photo" && !d.photo && photoStore) {
           banner("Take the photo with the button below — the box ticks itself once it's saved.");
           return;
         }
@@ -1388,14 +1586,14 @@
         break;
 
       case "water":
-        d = getDay(ds);
+        d = getDay(ad);
         var i = +el.dataset.i;
         d.water = (d.water === i + 1) ? i : i + 1;
         save(); render();
         break;
 
       case "wo-out":
-        d = getDay(ds);
+        d = getDay(ad);
         d.workouts[+el.dataset.i].outdoor = !d.workouts[+el.dataset.i].outdoor;
         save(); render();
         break;
@@ -1413,8 +1611,14 @@
       case "day": openDay(el.dataset.d); break;
       case "edit-day":
         closeDialog();
-        if (el.dataset.d !== ds) S.settings.dateOverride = el.dataset.d;
-        view = "today"; save(); render();
+        /* Yesterday opens in a temporary editing mode, not by moving the date.
+           Anything else silently strands the whole app in the past. */
+        editDay = canEditDay(el.dataset.d) && el.dataset.d !== ds ? el.dataset.d : null;
+        view = "today"; render();
+        break;
+      case "back-to-today":
+        e.preventDefault();
+        editDay = null; view = "today"; render();
         break;
 
       case "copy-list": copyText(shoppingText(el.dataset.key)); break;
@@ -1432,11 +1636,9 @@
         break;
 
       case "export":
-        S.settings.lastBackupAt = ds;
-        save();
         offerFile("75-hard-backup-" + ds + ".json", JSON.stringify(S, null, 2),
-          "application/json", "Backup saved. Keep it somewhere you'll find it.");
-        render();
+          "application/json", "Backup saved. Keep it somewhere you'll find it.",
+          function () { S.settings.lastBackupAt = ds; save(); render(); });
         break;
 
       case "wipe":
@@ -1450,7 +1652,7 @@
       case "wipe-confirm":
         localStorage.removeItem(KEY);
         try { indexedDB.deleteDatabase("hard75"); } catch (x) {}
-        S = defaults(); dbp = null;
+        S = defaults(); dbp = null; editDay = null; photoStore = true;
         closeDialog(); view = "setup"; render();
         break;
     }
@@ -1460,7 +1662,7 @@
      blur, so the last field touched before closing the tab would never save. */
   function refreshLive() {
     if (!S.setupDone) return;
-    var ds = today(), n = dayNum(ds);
+    var ds = activeDay(), n = dayNum(ds);
     if (n < 1 || n > TOTAL) return;
     var d = getDay(ds), c = checks(d);
 
@@ -1487,6 +1689,9 @@
       ps.style.color = c.reading ? "var(--done)" : "var(--ink-3)";
     }
 
+    var pn = document.getElementById("pages-note");
+    if (pn) pn.innerHTML = pagesNote(d);
+
     var slot = document.getElementById("done-slot");
     if (slot) {
       slot.innerHTML = isComplete(d)
@@ -1497,7 +1702,7 @@
   document.addEventListener("input", function (e) {
     var el = e.target, act = el.dataset ? el.dataset.act : null;
     if (!act) return;
-    var ds = today(), d;
+    var ds = activeDay(), d;
 
     if (act === "wo-type") { d = getDay(ds); d.workouts[+el.dataset.i].type = el.value; save(); }
     else if (act === "wo-min") {
@@ -1518,7 +1723,7 @@
     var el = e.target;
     var act = el.dataset.act;
     if (!act) return;
-    var ds = today(), d;
+    var ds = activeDay(), d;
 
     switch (act) {
       case "start":
@@ -1539,7 +1744,13 @@
           .then(function (b) { return putPhoto(ds, b); })
           .then(function () { getDay(ds).photo = true; save(); render(); })
           .catch(function (err) {
-            banner("Couldn't save the photo: " + esc(err.message || "storage unavailable") + ".");
+            /* If the image can't be stored, the photo rule would be impossible
+               to satisfy — fall back to ticking it by hand rather than making
+               the day unclosable. A bad image file is a different problem. */
+            if (!/readable image|encode/.test(err && err.message || "")) photoStore = false;
+            render();
+            banner("Couldn't save the photo: " + esc(err.message || "storage unavailable") +
+              (photoStore ? "." : ". Tick <b>Progress photo</b> by hand instead."));
           });
         break;
 
@@ -1549,11 +1760,20 @@
         fr.onload = function () {
           try {
             var p = JSON.parse(fr.result);
-            if (!p || typeof p !== "object" || !p.days || !p.startDate) throw new Error("not a backup file");
+            if (!p || typeof p !== "object" || !p.days || typeof p.days !== "object" ||
+                Array.isArray(p.days) || !/^\d{4}-\d{2}-\d{2}$/.test(p.startDate)) {
+              throw new Error("not a backup file");
+            }
             S = p;
             var def = defaults(), k;
             for (k in def) if (!(k in S)) S[k] = def[k];
+            if (!S.settings || typeof S.settings !== "object") S.settings = def.settings;
             for (k in def.settings) if (!(k in S.settings)) S.settings[k] = def.settings[k];
+            /* A backup taken mid-test carries the date override with it, which
+               would silently leave the restored app pretending. */
+            S.settings.dateOverride = null;
+            editDay = null;
+            normalize(S);
             save(); view = "today"; render();
             banner("Backup restored.");
           } catch (x) {
@@ -1569,8 +1789,13 @@
   var lastSeen = today();
   setInterval(function () {
     var t = today();
-    if (t !== lastSeen) { lastSeen = t; render(); }
+    // yesterday stopped being yesterday — drop the editing mode with the date
+    if (t !== lastSeen) { lastSeen = t; editDay = null; render(); }
   }, 60000);
+
+  /* Probe the photo store up front so the Today view can offer the manual tick
+     immediately, rather than only after a failed upload. */
+  db().catch(function () { if (view === "today") render(); });
 
   render();
 })();
