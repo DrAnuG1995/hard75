@@ -1,0 +1,1577 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>75 Hard Ledger</title>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    --bg:        #EEF0F1;
+    --surface:   #FFFFFF;
+    --surface-2: #E4E7E9;
+    --line:      #D2D7DA;
+    --ink:       #14181C;
+    --ink-2:     #5A646C;
+    --ink-3:     #8A949C;
+    --accent:    #B4670F;
+    --accent-ink:#FFFFFF;
+    --done:      #376242;
+    --done-bg:   #DDE8DF;
+    --fail:      #9E3520;
+    --fail-bg:   #F0DCD7;
+    --water:     #276183;
+
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+    --r: 3px;
+    --pad: 16px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:        #0F1216;
+      --surface:   #171B21;
+      --surface-2: #1F242B;
+      --line:      #2A3038;
+      --ink:       #E8ECEF;
+      --ink-2:     #9AA5AE;
+      --ink-3:     #6B7680;
+      --accent:    #E8A33D;
+      --accent-ink:#14181C;
+      --done:      #77B184;
+      --done-bg:   #1B2A20;
+      --fail:      #DE6A52;
+      --fail-bg:   #2E1A16;
+      --water:     #62AACD;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg:        #0F1216;
+    --surface:   #171B21;
+    --surface-2: #1F242B;
+    --line:      #2A3038;
+    --ink:       #E8ECEF;
+    --ink-2:     #9AA5AE;
+    --ink-3:     #6B7680;
+    --accent:    #E8A33D;
+    --accent-ink:#14181C;
+    --done:      #77B184;
+    --done-bg:   #1B2A20;
+    --fail:      #DE6A52;
+    --fail-bg:   #2E1A16;
+    --water:     #62AACD;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  #app { max-width: 560px; margin: 0 auto; padding: 0 0 84px; }
+
+  /* ---- type ---- */
+  h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 600; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .muted { color: var(--ink-2); }
+  .small { font-size: 13px; }
+
+  /* ---- header ---- */
+  header {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    padding: 12px var(--pad);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .ring { flex: 0 0 auto; }
+  .hd-main { min-width: 0; flex: 1; }
+  .hd-day {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 26px; font-weight: 600; line-height: 1.1;
+    letter-spacing: -.02em;
+  }
+  .hd-day span { color: var(--ink-3); font-size: 15px; font-weight: 400; }
+  .hd-date { font-size: 12.5px; color: var(--ink-2); }
+
+  /* ---- cards ---- */
+  main { padding: var(--pad); display: flex; flex-direction: column; gap: 12px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+  }
+  .card-h {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--line);
+    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  }
+  .card-b { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ---- task rows ---- */
+  .task {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; text-align: left;
+    padding: 13px 14px;
+    background: var(--surface);
+    border: 0; border-bottom: 1px solid var(--line);
+    color: inherit; font: inherit; cursor: pointer;
+  }
+  .task:last-child { border-bottom: 0; }
+  .task:disabled { cursor: default; opacity: .55; }
+  .box {
+    flex: 0 0 auto; width: 22px; height: 22px;
+    border: 1.5px solid var(--ink-3); border-radius: 2px;
+    display: grid; place-items: center;
+    font-family: var(--mono); font-size: 13px; line-height: 1;
+    color: transparent;
+  }
+  .task[data-on="1"] .box {
+    background: var(--done); border-color: var(--done); color: #fff;
+  }
+  .task-t { flex: 1; min-width: 0; }
+  .task-t b { font-weight: 550; display: block; }
+  .task-t em { font-style: normal; font-size: 12.5px; color: var(--ink-2); }
+  .task[data-on="1"] .task-t b { color: var(--ink-2); text-decoration: line-through; text-decoration-color: var(--ink-3); }
+
+  /* ---- water ---- */
+  .water-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; }
+  .drop {
+    height: 42px; border: 1.5px solid var(--line); border-radius: 2px;
+    background: var(--surface-2); cursor: pointer; padding: 0;
+    display: grid; place-items: end center;
+    font-family: var(--mono); font-size: 9px; color: var(--ink-3);
+    padding-bottom: 3px;
+  }
+  .drop[data-on="1"] { background: var(--water); border-color: var(--water); color: rgba(255,255,255,.85); }
+
+  /* ---- workouts ---- */
+  .wo { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .wo:last-child { border-bottom: 0; }
+  .wo-top { display: flex; align-items: center; gap: 8px; }
+  .wo-top .eyebrow { flex: 1; }
+  input[type="text"], input[type="number"], input[type="date"], input[type="time"], select, textarea {
+    font: inherit; font-size: 14px;
+    color: var(--ink); background: var(--surface-2);
+    border: 1px solid var(--line); border-radius: 2px;
+    padding: 9px 10px; width: 100%;
+  }
+  textarea { resize: vertical; min-height: 64px; font-size: 14px; }
+  .wo-row { display: grid; grid-template-columns: 1fr 84px; gap: 8px; }
+  .chip {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
+    padding: 6px 10px; border-radius: 2px; border: 1px solid var(--line);
+    background: var(--surface-2); color: var(--ink-2); cursor: pointer;
+  }
+  .chip[data-on="1"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+  /* ---- buttons ---- */
+  button { font: inherit; }
+  .btn {
+    display: block; width: 100%; padding: 12px 14px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+    background: var(--surface-2); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 2px; cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn-danger  { background: transparent; border-color: var(--fail); color: var(--fail); }
+  .btn:hover { filter: brightness(1.06); }
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* ---- banners ---- */
+  .banner {
+    padding: 11px 14px; border-radius: var(--r); font-size: 13.5px;
+    border: 1px solid var(--line); background: var(--surface);
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .banner.done { border-color: var(--done); background: var(--done-bg); color: var(--done); }
+  .banner.warn { border-left: 3px solid var(--accent); }
+  .banner b { font-weight: 600; }
+
+  /* ---- calendar ---- */
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-dow {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em;
+    text-align: center; color: var(--ink-3); text-transform: uppercase;
+  }
+  .cell {
+    aspect-ratio: 1; border: 1px solid var(--line); border-radius: 2px;
+    background: var(--surface-2); cursor: pointer; padding: 0;
+    display: grid; place-items: center; position: relative;
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-size: 11px; color: var(--ink-3);
+  }
+  .cell[data-s="future"] { background: transparent; }
+  .cell[data-s="done"]   { background: var(--done); border-color: var(--done); color: rgba(255,255,255,.9); }
+  .cell[data-s="partial"]{ border-color: var(--accent); color: var(--ink); }
+  .cell[data-s="miss"]   { background: var(--fail-bg); border-color: var(--fail); color: var(--fail); }
+  .cell[data-today="1"]  { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .cell[data-cook="1"]::after {
+    content: ""; position: absolute; top: 3px; right: 3px;
+    width: 4px; height: 4px; border-radius: 50%; background: var(--accent);
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; }
+  .legend div { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); }
+  .sw { width: 11px; height: 11px; border-radius: 2px; border: 1px solid var(--line); }
+
+  /* ---- meals ---- */
+  .meal { padding: 12px 14px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; }
+  .meal:last-child { border-bottom: 0; }
+  .meal-n { font-family: var(--mono); font-size: 11px; color: var(--ink-3); flex: 0 0 26px; padding-top: 2px; }
+  .meal-b { flex: 1; min-width: 0; }
+  .meal-b b { font-weight: 550; }
+  .macros { font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); margin-top: 2px; }
+  .macros span { color: var(--accent); }
+  .ing { font-size: 12.5px; color: var(--ink-2); margin-top: 5px; }
+  .tags { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+  .tag {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase;
+    padding: 2px 6px; border: 1px solid var(--line); border-radius: 2px; color: var(--ink-3);
+  }
+  .tag.both { border-color: var(--done); color: var(--done); }
+
+  /* ---- stats ---- */
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); }
+  .stat { background: var(--surface); padding: 14px; }
+  .stat .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 24px; font-weight: 600; line-height: 1.1; }
+  .stat .k { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+
+  table.hist { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.hist th, table.hist td { text-align: left; padding: 8px 14px; border-bottom: 1px solid var(--line); }
+  table.hist th { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 400; }
+  table.hist td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .scroll-x { overflow-x: auto; }
+
+  /* ---- field ---- */
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+  .field .hint { font-size: 12.5px; color: var(--ink-2); }
+
+  /* ---- nav ---- */
+  nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+    background: var(--surface); border-top: 1px solid var(--line);
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav button {
+    background: none; border: 0; cursor: pointer; padding: 11px 4px 12px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-3); border-top: 2px solid transparent; margin-top: -1px;
+  }
+  nav button[data-on="1"] { color: var(--accent); border-top-color: var(--accent); }
+
+  /* ---- dialog ---- */
+  dialog {
+    border: 1px solid var(--line); border-radius: var(--r); padding: 0;
+    background: var(--surface); color: var(--ink);
+    width: calc(100% - 32px); max-width: 420px;
+  }
+  dialog::backdrop { background: rgba(0,0,0,.55); }
+  .dlg-b { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+
+  .photo-prev {
+    width: 100%; max-height: 340px; object-fit: cover; object-position: top;
+    border-radius: 2px; display: block; border: 1px solid var(--line); background: var(--surface-2);
+  }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div id="app">
+  <header id="hd"></header>
+  <main id="view"></main>
+</div>
+
+<nav id="nav">
+  <button data-nav="today">Today</button>
+  <button data-nav="cal">Calendar</button>
+  <button data-nav="meals">Meals</button>
+  <button data-nav="stats">Stats</button>
+  <button data-nav="setup">Setup</button>
+</nav>
+
+<dialog id="dlg"><div class="dlg-b" id="dlg-b"></div></dialog>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============================ constants ============================ */
+
+  var KEY = "hard75.v1";
+  var TOTAL = 75;
+  var WATER_UNITS = 8;          // 8 x 500 ml = 4 L
+  var WORKOUT_MIN = 45;
+
+  var PAGES_MIN = 10;
+
+  var TASKS = [
+    { k: "noAlcohol", t: "No alcohol",      s: "Zero. Not one." },
+    { k: "diet",      t: "Stuck to the diet", s: "All meals on plan" },
+    { k: "noCheat",   t: "No cheat meals",  s: "Nothing off plan, no exceptions" },
+    { k: "photo",     t: "Progress photo",  s: "Stays on this device" }
+  ];
+
+  /* ============================ meal plan ============================ */
+
+  var SHAKE = {
+    slot: "Mid-morning", name: "Whey, oats & banana shake", cal: 375, p: 33, f: 5, c: 52,
+    ing: "35 g whey isolate · 40 g rolled oats · 1 banana · 250 ml water + ice",
+    both: false, cold: true, cook: false
+  };
+
+  function meal(slot, name, cal, p, f, c, ing, both, cold) {
+    return { slot: slot, name: name, cal: cal, p: p, f: f, c: c, ing: ing, both: both, cold: cold, cook: true };
+  }
+
+  /* Breakfast runs two ways: the cooked hash from the batch, or a no-cook dairy
+     bowl. Both land ~385 kcal / 36 g protein, so alternating never moves the
+     day's macros. One per rotation, so it varies week to week. */
+  var NOCOOK = [
+    { slot: "Breakfast", name: "Greek yoghurt, oats & berries", cal: 390, p: 36, f: 8, c: 42,
+      ing: "250 g Greek yoghurt (2%) · 35 g rolled oats · 80 g berries · 10 g whey",
+      both: true, cold: true, cook: false, alt: true },
+    { slot: "Breakfast", name: "Cottage cheese & banana bowl", cal: 380, p: 36, f: 4, c: 50,
+      ing: "200 g light cottage cheese · 1 banana · 20 g oats · 10 g whey · 10 g honey, cinnamon",
+      both: true, cold: true, cook: false, alt: true },
+    { slot: "Breakfast", name: "Overnight oats, whey & peanut butter", cal: 385, p: 36, f: 9, c: 34,
+      ing: "200 g Greek yoghurt · 30 g oats · 15 g whey · 8 g peanut butter · 50 g berries",
+      both: true, cold: true, cook: false, alt: true } ];
+
+  /* Eight chosen mains, no turkey. Two rotations alternating weekly; each main
+     comes round every week or two. Breakfast hashes are chicken or beef. */
+  var ROTATIONS = {
+    A: {
+      id: "A",
+      cook1: {
+        day: "Sunday", covers: "Mon–Wed", servings: 18,
+        meals: [
+          meal("Breakfast", "Beef & sweet potato hash", 395, 35, 12, 33,
+            "130 g beef mince (5%) · 110 g sweet potato · 80 g red capsicum · 50 g onion · cumin, chipotle", true, true),
+          meal("Lunch", "Chicken burrito bowl", 395, 42, 5, 41,
+            "150 g chicken breast · 35 g basmati (dry) · 50 g black beans · 60 g salsa · lime, coriander", true, true),
+          meal("Afternoon", "Chicken souvlaki bowl", 390, 38, 12, 28,
+            "150 g chicken thigh · 120 g chat potato · cucumber & tomato · 60 g Greek yoghurt tzatziki", false, true),
+          meal("Dinner", "Beef & broccoli stir-fry", 400, 35, 10, 37,
+            "130 g lean rump · 150 g broccoli · 35 g jasmine rice (dry) · soy, ginger, garlic, sesame", true, false)
+        ]
+      },
+      cook2: {
+        day: "Wednesday", covers: "Thu–Sun", servings: 24,
+        meals: [
+          meal("Breakfast", "Paprika chicken & potato hash", 385, 37, 10, 34,
+            "150 g chicken breast · 130 g potato · 70 g capsicum · onion · smoked paprika, oregano", true, true),
+          meal("Lunch", "Chicken shawarma wrap", 395, 40, 11, 33,
+            "140 g chicken thigh · 1 high-protein wrap · 50 g yoghurt-garlic sauce · salad", true, true),
+          meal("Afternoon", "Chicken tikka & basmati", 395, 41, 9, 36,
+            "160 g chicken breast · yoghurt-tikka marinade · 35 g basmati (dry) · cucumber salad", false, false),
+          meal("Dinner", "Korean beef rice bowl", 400, 36, 11, 36,
+            "130 g lean beef mince (5%) · gochujang · 35 g rice (dry) · cucumber, sesame, spring onion", true, false)
+        ]
+      }
+    },
+    B: {
+      id: "B",
+      cook1: {
+        day: "Sunday", covers: "Mon–Wed", servings: 18,
+        meals: [
+          meal("Breakfast", "Smoky chicken & sweet potato hash", 385, 38, 10, 32,
+            "150 g chicken breast · 110 g sweet potato · 80 g capsicum · smoked paprika, fennel", true, true),
+          meal("Lunch", "Moroccan chicken & couscous", 390, 40, 8, 38,
+            "150 g chicken breast · 45 g couscous (dry) · roast carrot & zucchini · ras el hanout", true, true),
+          meal("Afternoon", "Chicken burrito bowl", 395, 42, 5, 41,
+            "150 g chicken breast · 35 g basmati (dry) · 50 g black beans · 60 g salsa · lime, coriander", false, true),
+          meal("Dinner", "Slow beef ragu with pasta", 400, 37, 11, 36,
+            "140 g lean chuck or rump · passata, carrot, celery · 40 g pasta (dry)", true, false)
+        ]
+      },
+      cook2: {
+        day: "Wednesday", covers: "Thu–Sun", servings: 24,
+        meals: [
+          meal("Breakfast", "Beef & potato hash", 390, 34, 12, 34,
+            "130 g beef mince (5%) · 130 g potato · onion · thyme, black pepper", true, true),
+          meal("Lunch", "Chicken souvlaki bowl", 390, 38, 12, 28,
+            "150 g chicken thigh · 120 g chat potato · cucumber & tomato · 60 g Greek yoghurt tzatziki", true, true),
+          meal("Afternoon", "Chicken tikka & basmati", 395, 41, 9, 36,
+            "160 g chicken breast · yoghurt-tikka marinade · 35 g basmati (dry) · cucumber salad", false, false),
+          meal("Dinner", "Beef & broccoli stir-fry", 400, 35, 10, 37,
+            "130 g lean rump · 150 g broccoli · 35 g jasmine rice (dry) · soy, ginger, garlic, sesame", true, false)
+        ]
+      }
+    }
+  };
+
+  var ROT_ORDER = ["A", "B"];
+
+  /* Shopping lists, keyed rotation+cook. Quantities cover the servings shown. */
+  var SHOPPING = {
+    "A1": {
+      title: "Rotation A · Cook 1 · Sunday", servings: 18, nocook: 3,
+      groups: [
+        { g: "Butcher", items: ["Beef mince, 5% fat — 400 g", "Chicken breast — 900 g", "Chicken thigh fillets, skinless — 450 g", "Beef rump, lean & trimmed — 800 g"] },
+        { g: "Produce", items: ["Sweet potato — 350 g (1 large)", "Red capsicum — 250 g (2 medium)", "Brown onion — 200 g (2 small)", "Broccoli — 900 g (2 large heads)", "Chat potatoes — 400 g", "Lebanese cucumber — 2", "Tomatoes — 3", "Limes — 2 · Lemon — 1", "Coriander — 1 bunch · Dill — 1 small bunch", "Garlic — 1 bulb · Ginger — 1 thumb", "Bananas — 3 (shakes)", "Berries — 250 g (fresh or frozen)", "Fruit for daily extras — 6 pieces"] },
+        { g: "Pantry", items: ["Long-grain rice, basmati or jasmine — 1 × 500 g bag", "Rolled oats — 1 bag (225 g used)", "Black beans — 2 × 400 g tins", "Chunky salsa — 1 × 400 g jar", "Light soy sauce · Oyster sauce · Sesame oil", "Olive oil spray", "Smoked paprika, cumin, dried oregano, chilli flakes"] },
+        { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 1 kg tub (750 g bowls + 180 g tzatziki)", "Whey isolate — 135 g needed", "Optional: light cottage cheese 200 g if you want the other bowl"] }
+      ]
+    },
+    "A2": {
+      title: "Rotation A · Cook 2 · Wednesday", servings: 24, nocook: 4,
+      groups: [
+        { g: "Butcher", items: ["Chicken breast — 1.24 kg (hash + tikka)", "Chicken thigh fillets — 1.15 kg", "Beef mince, 5% fat — 1.05 kg"] },
+        { g: "Produce", items: ["Potatoes — 550 g", "Red capsicum — 280 g", "Brown onion — 300 g", "Cucumber — 4", "Spring onion — 1 bunch", "Garlic, ginger", "Bananas — 4", "Berries — 320 g", "Fruit for daily extras — 8 pieces"] },
+        { g: "Pantry", items: ["High-protein wraps — 8", "Basmati rice — 500 g bag", "Gochujang", "Sesame seeds", "Rolled oats", "Tikka spice / garam masala", "Smoked paprika, oregano"] },
+        { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 1.6 kg (breakfast bowls, tikka marinade, shawarma sauce)", "Whey isolate — 180 g", "This week's no-cook bowl varies — check the meals above"] }
+      ]
+    },
+    "B1": {
+      title: "Rotation B · Cook 1 · Sunday", servings: 18, nocook: 3,
+      groups: [
+        { g: "Butcher", items: ["Chicken breast — 1.8 kg (hash + Moroccan + burrito)", "Beef chuck or rump — 850 g"] },
+        { g: "Produce", items: ["Sweet potato — 350 g", "Red capsicum — 250 g", "Carrot — 3 · Zucchini — 2 · Celery — 2 sticks", "Brown onion — 300 g", "Limes — 2", "Coriander — 1 bunch", "Garlic — 1 bulb", "Bananas — 3", "Berries — 250 g", "Fruit for daily extras — 6 pieces"] },
+        { g: "Pantry", items: ["Couscous — 300 g", "Basmati rice — 250 g", "Pasta — 250 g", "Black beans — 2 × 400 g tins", "Chunky salsa — 1 × 400 g jar", "Passata — 2 × 700 g", "Ras el hanout, smoked paprika, fennel seed", "Rolled oats", "Olive oil spray"] },
+        { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 800 g", "Whey isolate — 135 g", "This week's no-cook bowl varies — check the meals above"] }
+      ]
+    },
+    "B2": {
+      title: "Rotation B · Cook 2 · Wednesday", servings: 24, nocook: 4,
+      groups: [
+        { g: "Butcher", items: ["Chicken breast — 650 g (tikka)", "Chicken thigh fillets — 1.2 kg", "Beef mince, 5% fat — 520 g", "Beef rump, lean & trimmed — 1.05 kg"] },
+        { g: "Produce", items: ["Potatoes — 520 g", "Chat potatoes — 960 g", "Broccoli — 1.2 kg (3 heads)", "Brown onion — 400 g", "Cucumber — 4 · Tomatoes — 6", "Lemon — 2", "Dill — 1 bunch · Thyme — 1 small bunch", "Garlic, ginger", "Bananas — 4", "Berries — 320 g", "Fruit for daily extras — 8 pieces"] },
+        { g: "Pantry", items: ["Basmati rice — 500 g bag", "Jasmine rice — 300 g", "Light soy · Oyster sauce · Sesame oil", "Tikka spice / garam masala", "Rolled oats"] },
+        { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 1.5 kg (bowls, tzatziki, tikka marinade)", "Whey isolate — 180 g", "This week's no-cook bowl varies — check the meals above"] }
+      ]
+    }
+  };
+
+  /* ============================ state ============================ */
+
+  function defaults() {
+    return {
+      version: 1,
+      setupDone: false,
+      startDate: "2026-08-17",
+      attempt: 1,
+      history: [],
+      days: {},
+      settings: { morning: "06:00", evening: "20:00", lastBackupAt: null, dateOverride: null }
+    };
+  }
+
+  var S = load();
+  var view = "today";
+  var undoSnapshot = null;
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return defaults();
+      var p = JSON.parse(raw);
+      var d = defaults();
+      // shallow merge so an older save never loses new fields
+      for (var k in d) if (!(k in p)) p[k] = d[k];
+      for (var s in d.settings) if (!(s in p.settings)) p.settings[s] = d.settings[s];
+      return p;
+    } catch (e) {
+      return defaults();
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(S));
+    } catch (e) {
+      alert("Could not save. Your browser storage may be full or blocked in private browsing.");
+    }
+  }
+
+  /* ============================ dates ============================ */
+
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function iso(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function parseISO(s) { var a = s.split("-"); return new Date(+a[0], +a[1] - 1, +a[2]); }
+  function addDays(s, n) { var d = parseISO(s); d.setDate(d.getDate() + n); return iso(d); }
+  function diffDays(a, b) { return Math.round((parseISO(b) - parseISO(a)) / 86400000); }
+  function today() { return S.settings.dateOverride || iso(new Date()); }
+  function dayNum(ds) { return diffDays(S.startDate, ds) + 1; }
+  function endDate() { return addDays(S.startDate, TOTAL - 1); }
+
+  var DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function longDate(s) {
+    var d = parseISO(s);
+    return DOW[d.getDay()] + " " + d.getDate() + " " + MON[d.getMonth()] + " " + d.getFullYear();
+  }
+
+  /* ============================ day records ============================ */
+
+  function blankDay() {
+    return {
+      noAlcohol: false, diet: false, noCheat: false, photo: false,
+      water: 0,
+      workouts: [{ type: "", min: 0, outdoor: false }, { type: "", min: 0, outdoor: true }],
+      book: "", pageFrom: null, pageTo: null,
+      weight: null, notes: ""
+    };
+  }
+
+  /* A new day inherits the book you're on and picks up from the page you
+     stopped at, so the only thing to type most mornings is where you got to. */
+  function seedDay(ds) {
+    var d = blankDay(), prev = null, i, p;
+    for (i = 1; i <= 14; i++) {
+      p = addDays(ds, -i);
+      if (S.days[p] && (S.days[p].book || S.days[p].pageTo != null)) { prev = S.days[p]; break; }
+    }
+    if (prev) {
+      d.book = prev.book || "";
+      if (prev.pageTo != null) d.pageFrom = prev.pageTo;
+    }
+    return d;
+  }
+
+  function getDay(ds) {
+    if (!S.days[ds]) S.days[ds] = seedDay(ds);
+    var d = S.days[ds];
+    if (!d.workouts || d.workouts.length !== 2) d.workouts = blankDay().workouts;
+    return d;
+  }
+
+  function pagesRead(d) {
+    if (d.pageFrom == null || d.pageTo == null) return 0;
+    return Math.max(0, d.pageTo - d.pageFrom);
+  }
+
+  function hasDay(ds) { return Object.prototype.hasOwnProperty.call(S.days, ds); }
+
+  function checks(d) {
+    var valid = d.workouts.filter(function (w) { return w.min >= WORKOUT_MIN; });
+    return {
+      noAlcohol: !!d.noAlcohol,
+      diet: !!d.diet,
+      noCheat: !!d.noCheat,
+      reading: pagesRead(d) >= PAGES_MIN,
+      photo: !!d.photo,
+      water: d.water >= WATER_UNITS,
+      workouts: valid.length >= 2 && valid.some(function (w) { return w.outdoor; })
+    };
+  }
+
+  function isComplete(d) {
+    var c = checks(d), k;
+    for (k in c) if (!c[k]) return false;
+    return true;
+  }
+
+  function touched(d) {
+    return d.noAlcohol || d.diet || d.noCheat || d.photo ||
+           d.water > 0 || pagesRead(d) > 0 ||
+           d.workouts.some(function (w) { return w.min > 0; });
+  }
+
+  function dayState(ds) {
+    var t = today();
+    if (ds > t) return "future";
+    if (!hasDay(ds)) return ds < t ? "miss" : "partial";
+    var d = S.days[ds];
+    if (isComplete(d)) return "done";
+    if (ds < t) return "miss";
+    return touched(d) ? "partial" : "pending";
+  }
+
+  /* ============================ photos (IndexedDB) ============================ */
+
+  var dbp = null;
+  function db() {
+    if (!dbp) {
+      dbp = new Promise(function (res, rej) {
+        var r = indexedDB.open("hard75", 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore("photos"); };
+        r.onsuccess = function () { res(r.result); };
+        r.onerror = function () { rej(r.error); };
+      });
+    }
+    return dbp;
+  }
+
+  function putPhoto(k, blob) {
+    return db().then(function (d) {
+      return new Promise(function (res, rej) {
+        var t = d.transaction("photos", "readwrite");
+        t.objectStore("photos").put(blob, k);
+        t.oncomplete = function () { res(); };
+        t.onerror = function () { rej(t.error); };
+      });
+    });
+  }
+
+  function getPhoto(k) {
+    return db().then(function (d) {
+      return new Promise(function (res, rej) {
+        var t = d.transaction("photos", "readonly");
+        var q = t.objectStore("photos").get(k);
+        q.onsuccess = function () { res(q.result || null); };
+        q.onerror = function () { rej(q.error); };
+      });
+    });
+  }
+
+  function downscale(file, max, q) {
+    return new Promise(function (res, rej) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var s = Math.min(1, max / Math.max(img.width, img.height));
+        var c = document.createElement("canvas");
+        c.width = Math.round(img.width * s);
+        c.height = Math.round(img.height * s);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        c.toBlob(function (b) { b ? res(b) : rej(new Error("Could not encode the photo.")); }, "image/jpeg", q);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); rej(new Error("That file isn't a readable image.")); };
+      img.src = url;
+    });
+  }
+
+  /* ============================ meal helpers ============================ */
+
+  function weekIndex(ds) {
+    var n = dayNum(ds);
+    if (n < 1) n = 1;
+    return Math.floor((n - 1) / 7);
+  }
+
+  function rotationFor(ds) {
+    return ROTATIONS[ROT_ORDER[weekIndex(ds) % ROT_ORDER.length]];
+  }
+
+  function cookForDate(ds) {
+    // Sunday cook covers Mon–Wed, Wednesday cook covers Thu–Sun.
+    var dw = parseISO(ds).getDay(); // 0 Sun … 6 Sat
+    var r = rotationFor(ds);
+    return (dw >= 1 && dw <= 3) ? r.cook1 : r.cook2;
+  }
+
+  function mealsFor(ds) {
+    var cook = cookForDate(ds);
+    /* Bowls cycle every 3 weeks against a 2-week main rotation, so the pairing
+       keeps shifting instead of locking to the same breakfast each rotation. */
+    var nc = NOCOOK[weekIndex(ds) % NOCOOK.length];
+    var out = [];
+    ["Breakfast", "Lunch", "Afternoon", "Dinner"].forEach(function (slot) {
+      cook.meals.forEach(function (m) { if (m.slot === slot) out.push(m); });
+      if (slot === "Breakfast") { out.push(nc); out.push(SHAKE); }
+    });
+    return out;
+  }
+
+  function isCookDay(ds) {
+    var dw = parseISO(ds).getDay();
+    return dw === 0 || dw === 3;
+  }
+
+  /* ============================ calendar file ============================ */
+
+  function icsEscape(s) { return String(s).replace(/([,;\\])/g, "\\$1").replace(/\n/g, "\\n"); }
+
+  function buildICS() {
+    var stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+    var uidBase = "h75-" + S.startDate.replace(/-/g, "") + "-a" + S.attempt;
+    var L = [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//75 Hard Ledger//EN",
+      "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:75 Hard"
+    ];
+
+    function ev(uid, dstart, rrule, summary, desc, alarm) {
+      L.push("BEGIN:VEVENT");
+      L.push("UID:" + uid);
+      L.push("DTSTAMP:" + stamp);
+      L.push("DTSTART:" + dstart);          // floating local time — no TZ, no DST drift
+      if (rrule) L.push("RRULE:" + rrule);
+      L.push("SUMMARY:" + icsEscape(summary));
+      L.push("DESCRIPTION:" + icsEscape(desc));
+      if (alarm) {
+        L.push("BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:-PT0M",
+               "DESCRIPTION:" + icsEscape(summary), "END:VALARM");
+      }
+      L.push("DURATION:PT15M");
+      L.push("END:VEVENT");
+    }
+
+    var d0 = S.startDate.replace(/-/g, "");
+    var m = S.settings.morning.replace(":", "") + "00";
+    var e = S.settings.evening.replace(":", "") + "00";
+
+    ev(uidBase + "-am@h75", d0 + "T" + m, "FREQ=DAILY;COUNT=" + TOTAL,
+       "75 Hard — start the day",
+       "Workout 1 (45 min). Fill your 4 L. Meals are prepped — stick to the plan.", true);
+
+    ev(uidBase + "-pm@h75", d0 + "T" + e, "FREQ=DAILY;COUNT=" + TOTAL,
+       "75 Hard — close the day",
+       "Log it: 2 x 45 min (one outdoors), 4 L water, 10 pages, progress photo, no alcohol, no cheat meals.", true);
+
+    // Cook sessions: Sunday and Wednesday, 11 weeks.
+    var firstSun = S.startDate, firstWed = S.startDate, i;
+    for (i = 0; i < 7; i++) { if (parseISO(addDays(S.startDate, -i)).getDay() === 0) { firstSun = addDays(S.startDate, -i); break; } }
+    for (i = 0; i < 7; i++) { if (parseISO(addDays(S.startDate, i)).getDay() === 3) { firstWed = addDays(S.startDate, i); break; } }
+
+    ev(uidBase + "-cook1@h75", firstSun.replace(/-/g, "") + "T160000", "FREQ=WEEKLY;BYDAY=SU;COUNT=11",
+       "75 Hard — Sunday cook (Mon–Wed)", "21 servings. Shopping list is in the app under Meals.", true);
+    ev(uidBase + "-cook2@h75", firstWed.replace(/-/g, "") + "T180000", "FREQ=WEEKLY;BYDAY=WE;COUNT=11",
+       "75 Hard — Wednesday cook (Thu–Sun)", "28 servings. Shopping list is in the app under Meals.", true);
+
+    ev(uidBase + "-backup@h75", addDays(S.startDate, 6).replace(/-/g, "") + "T200000", "FREQ=WEEKLY;COUNT=11",
+       "75 Hard — back up your data",
+       "Open the tracker, go to Setup, tap Export. No backup means one cleared cache wipes the streak.", true);
+
+    L.push("BEGIN:VEVENT", "UID:" + uidBase + "-done@h75", "DTSTAMP:" + stamp,
+           "DTSTART;VALUE=DATE:" + endDate().replace(/-/g, ""),
+           "SUMMARY:Day 75 — 75 Hard complete", "END:VEVENT");
+
+    L.push("END:VCALENDAR");
+    return L.join("\r\n");
+  }
+
+  function shoppingText(key) {
+    var shop = SHOPPING[key];
+    if (!shop) return "";
+    var out = ["75 Hard — " + shop.title, shop.servings + " cooked servings" +
+      (shop.nocook ? " + " + shop.nocook + " no-cook breakfasts" : ""), ""];
+    shop.groups.forEach(function (g) {
+      out.push(g.g.toUpperCase());
+      g.items.forEach(function (x) { out.push("- " + x); });
+      out.push("");
+    });
+    return out.join("\n").trim();
+  }
+
+  /* The clipboard API needs a secure context and can be blocked inside an
+     embedded frame, so always keep a manual-select fallback. */
+  function copyText(t) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t).then(
+        function () { banner("Shopping list copied."); },
+        function () { copyFallback(t); });
+    } else {
+      copyFallback(t);
+    }
+  }
+
+  function copyFallback(t) {
+    dialog('<div><span class="eyebrow">Shopping list</span>' +
+      '<h2 style="font-size:17px">Copy it from here</h2></div>' +
+      '<p class="small muted" style="margin:0">Your browser blocked the clipboard. ' +
+      'The text is selected — press Ctrl+C (or Cmd+C).</p>' +
+      '<textarea id="copy-box" readonly style="min-height:240px">' + esc(t) + '</textarea>' +
+      '<button class="btn" data-act="close">Done</button>');
+    setTimeout(function () {
+      var box = document.getElementById("copy-box");
+      if (box) { box.focus(); box.select(); }
+    }, 60);
+  }
+
+  function nativeDownload(name, text, mime) {
+    var b = new Blob([text], { type: mime || "text/plain" });
+    var u = URL.createObjectURL(b);
+    var a = document.createElement("a");
+    a.href = u; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(u); }, 1000);
+  }
+
+  /* Opened from disk or a normal web host, a plain anchor download works.
+     Inside the claude.ai artifact viewer it doesn't — the page has to hand the
+     file over through the downloads capability, whose allowlist has no .ics,
+     so the calendar file goes out as .txt and gets renamed. */
+  function hosted() {
+    return !!(window.claude && typeof window.claude.use === "function");
+  }
+
+  function offerFile(name, text, mime, okNote) {
+    if (!hosted()) { nativeDownload(name, text, mime); if (okNote) banner(okNote); return; }
+
+    window.claude.use("downloads").then(function (dl) {
+      if (!dl) { nativeDownload(name, text, mime); return; }
+      var isIcs = /\.ics$/.test(name);
+      var safe = isIcs ? name.replace(/\.ics$/, "-calendar.txt") : name;
+      return dl.save({ filename: safe, data: text }).then(function () {
+        banner(isIcs
+          ? '<div>Saved as <b>' + esc(safe) + '</b>. Rename it to <b>' +
+            esc(name) + '</b>, then open it to import the reminders.</div>'
+          : (okNote || "Saved."));
+      });
+    }).catch(function (e) {
+      var code = e && e.code;
+      if (code === "declined") return;
+      banner("Couldn't save the file" + (code ? " (" + esc(code) + ")" : "") + ".");
+    });
+  }
+
+  /* ============================ rendering ============================ */
+
+  var $view = document.getElementById("view");
+  var $hd = document.getElementById("hd");
+  var $dlg = document.getElementById("dlg");
+  var $dlgB = document.getElementById("dlg-b");
+
+  function card(title, body) {
+    return '<div class="card"><div class="card-h"><span class="eyebrow">' + esc(title) + '</span></div>' +
+      '<div class="card-b">' + body + '</div></div>';
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function render() {
+    renderHeader();
+    if (!S.setupDone) { view = "setup"; }
+    var fns = { today: viewToday, cal: viewCal, meals: viewMeals, stats: viewStats, setup: viewSetup };
+    $view.innerHTML = (fns[view] || viewToday)();
+    Array.prototype.forEach.call(document.querySelectorAll("#nav button"), function (b) {
+      b.setAttribute("data-on", b.dataset.nav === view ? "1" : "0");
+    });
+    if (view === "today") loadTodayPhoto();
+  }
+
+  function renderHeader() {
+    var t = today(), n = dayNum(t);
+    var pct = Math.max(0, Math.min(1, (n - 1) / TOTAL));
+    var C = 2 * Math.PI * 20;
+    var label, sub;
+
+    if (!S.setupDone) {
+      label = "75 Hard"; sub = "Not started";
+    } else if (n < 1) {
+      label = "Starts in " + (1 - n) + "d"; sub = longDate(S.startDate);
+    } else if (n > TOTAL) {
+      label = "Complete"; sub = "Finished " + longDate(endDate());
+    } else {
+      label = '<span class="num">' + n + '</span> <span>/ ' + TOTAL + '</span>';
+      sub = longDate(t) + (S.attempt > 1 ? " · attempt " + S.attempt : "");
+    }
+
+    $hd.innerHTML =
+      '<svg class="ring" width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">' +
+        '<circle cx="23" cy="23" r="20" fill="none" stroke="var(--line)" stroke-width="3"></circle>' +
+        '<circle cx="23" cy="23" r="20" fill="none" stroke="var(--accent)" stroke-width="3"' +
+        ' stroke-linecap="butt" stroke-dasharray="' + C.toFixed(1) + '"' +
+        ' stroke-dashoffset="' + (C * (1 - pct)).toFixed(1) + '"' +
+        ' transform="rotate(-90 23 23)"></circle>' +
+      '</svg>' +
+      '<div class="hd-main">' +
+        '<div class="hd-day">' + (label.indexOf("<") === 0 ? label : esc(label)) + '</div>' +
+        '<div class="hd-date">' + esc(sub) + '</div>' +
+      '</div>';
+  }
+
+  /* ---------- today ---------- */
+
+  function viewToday() {
+    var ds = today(), n = dayNum(ds);
+
+    if (!S.setupDone) return viewSetup();
+
+    if (n < 1) {
+      return card("Before day one",
+        '<p class="muted" style="margin:0">Day 1 is <b>' + esc(longDate(S.startDate)) + '</b>. ' +
+        'Between now and then: import the calendar file, do the first shop, and cook Sunday.</p>' +
+        '<button class="btn" data-act="go-meals">See the first cook</button>');
+    }
+    if (n > TOTAL) {
+      return '<div class="banner done"><b>75 days. Done.</b></div>' + viewStats();
+    }
+
+    var d = getDay(ds), c = checks(d);
+    var editable = true;
+    var h = "";
+
+    // backup nudge
+    var lb = S.settings.lastBackupAt;
+    if (n > 3 && (!lb || diffDays(lb, ds) >= 7)) {
+      h += '<div class="banner warn"><div>No backup ' +
+        (lb ? "since " + esc(longDate(lb)) : "yet") +
+        '. Clearing site data would wipe ' + (n - 1) + ' days. ' +
+        '<a href="#" data-act="go-setup" style="color:var(--accent)">Export now</a>.</div></div>';
+    }
+
+    h += '<div id="done-slot">' + (isComplete(d)
+      ? '<div class="banner done"><b>Day ' + n + ' logged.</b>&nbsp;Everything done.</div>' : "") + '</div>';
+
+    // checkbox tasks
+    var rows = TASKS.map(function (t) {
+      return '<button class="task" data-act="toggle" data-k="' + t.k + '" data-on="' + (d[t.k] ? 1 : 0) + '">' +
+        '<span class="box">&#10003;</span>' +
+        '<span class="task-t"><b>' + esc(t.t) + '</b><em>' + esc(t.s) + '</em></span>' +
+        '</button>';
+    }).join("");
+    h += '<div class="card">' + rows + '</div>';
+
+    // water
+    var drops = "";
+    for (var i = 0; i < WATER_UNITS; i++) {
+      drops += '<button class="drop" data-act="water" data-i="' + i + '" data-on="' + (i < d.water ? 1 : 0) + '"' +
+        ' aria-label="' + ((i + 1) * 0.5) + ' litres">' + ((i + 1) % 2 === 0 ? ((i + 1) / 2) + "L" : "") + '</button>';
+    }
+    h += '<div class="card">' +
+      '<div class="card-h"><span class="eyebrow">Water</span>' +
+        '<span class="num small ' + (c.water ? "" : "muted") + '">' + (d.water * 0.5).toFixed(1) + ' / 4.0 L</span></div>' +
+      '<div class="card-b"><div class="water-grid">' + drops + '</div>' +
+      '<div class="small muted">One tap = 500 ml. Tap the last filled block to take it back off.</div></div></div>';
+
+    // workouts
+    var wo = d.workouts.map(function (w, idx) {
+      var ok = w.min >= WORKOUT_MIN;
+      return '<div class="wo">' +
+        '<div class="wo-top">' +
+          '<span class="eyebrow">Workout ' + (idx + 1) + '</span>' +
+          '<span class="num small wo-min-out" style="color:' + (ok ? "var(--done)" : "var(--ink-3)") + '">' +
+            (w.min || 0) + ' / 45 min</span>' +
+        '</div>' +
+        '<div class="wo-row">' +
+          '<input type="text" data-act="wo-type" data-i="' + idx + '" placeholder="What did you do?" value="' + esc(w.type) + '">' +
+          '<input type="number" data-act="wo-min" data-i="' + idx + '" inputmode="numeric" min="0" max="600" placeholder="min" value="' + (w.min || "") + '">' +
+        '</div>' +
+        '<button class="chip" data-act="wo-out" data-i="' + idx + '" data-on="' + (w.outdoor ? 1 : 0) + '" style="align-self:flex-start">' +
+          (w.outdoor ? "&#9679; Outdoors" : "Indoors") + '</button>' +
+        '</div>';
+    }).join("");
+    h += '<div class="card">' +
+      '<div class="card-h"><span class="eyebrow">Training</span>' +
+        '<span class="small ' + (c.workouts ? "" : "muted") + '" id="train-status">' +
+        (c.workouts ? "Requirement met" : "2 &times; 45 min, one outdoors") + '</span></div>' +
+      wo + '</div>';
+
+    // reading
+    var pr = pagesRead(d);
+    h += '<div class="card">' +
+      '<div class="card-h"><span class="eyebrow">Reading</span>' +
+        '<span class="num small" id="pages-status" style="color:' +
+        (c.reading ? "var(--done)" : "var(--ink-3)") + '">' + pr + ' / ' + PAGES_MIN + ' pages</span></div>' +
+      '<div class="card-b">' +
+        '<div class="field"><label>Book</label>' +
+          '<input type="text" data-act="book" placeholder="Title you\'re working through" value="' + esc(d.book) + '"></div>' +
+        '<div class="wo-row" style="grid-template-columns:1fr 1fr">' +
+          '<div class="field"><label>Started at page</label>' +
+            '<input type="number" inputmode="numeric" min="0" data-act="pfrom" placeholder="—" value="' + (d.pageFrom != null ? d.pageFrom : "") + '"></div>' +
+          '<div class="field"><label>Read to page</label>' +
+            '<input type="number" inputmode="numeric" min="0" data-act="pto" placeholder="—" value="' + (d.pageTo != null ? d.pageTo : "") + '"></div>' +
+        '</div>' +
+        '<div class="small muted">Tomorrow starts where you stopped, with the same book already filled in.</div>' +
+      '</div></div>';
+
+    // photo + weight + notes
+    h += '<div class="card">' +
+      '<div class="card-h"><span class="eyebrow">Progress photo</span>' +
+      '<span class="small muted">' + (d.photo ? "Saved on this device" : "Not taken") + '</span></div>' +
+      '<div class="card-b">' +
+        '<div id="photo-slot"></div>' +
+        '<label class="btn" style="text-align:center;cursor:pointer">' +
+          (d.photo ? "Replace photo" : "Take / choose photo") +
+          '<input type="file" accept="image/*" capture="environment" data-act="photo" style="display:none">' +
+        '</label>' +
+      '</div></div>';
+
+    h += '<div class="card"><div class="card-b">' +
+      '<div class="field"><label>Weight (kg) — optional</label>' +
+        '<input type="number" step="0.1" inputmode="decimal" data-act="weight" placeholder="84.0" value="' + (d.weight != null ? d.weight : "") + '"></div>' +
+      '<div class="field"><label>Notes</label>' +
+        '<textarea data-act="notes" placeholder="How it went, what was hard, what to change.">' + esc(d.notes) + '</textarea></div>' +
+      '</div></div>';
+
+    h += '<button class="btn btn-danger" data-act="fail">I missed something today</button>';
+
+    return h;
+  }
+
+  function loadTodayPhoto() {
+    var slot = document.getElementById("photo-slot");
+    if (!slot) return;
+    var ds = today();
+    if (!S.days[ds] || !S.days[ds].photo) { slot.innerHTML = ""; return; }
+    getPhoto(ds).then(function (b) {
+      if (!b) { slot.innerHTML = '<div class="small muted">Photo record found but the image is missing.</div>'; return; }
+      var u = URL.createObjectURL(b);
+      slot.innerHTML = '<img class="photo-prev" alt="Progress photo for ' + esc(longDate(ds)) + '" src="' + u + '">';
+    }).catch(function () {
+      slot.innerHTML = '<div class="small muted">Photo storage unavailable in this browser.</div>';
+    });
+  }
+
+  /* ---------- calendar ---------- */
+
+  function viewCal() {
+    var t = today();
+    var startDow = parseISO(S.startDate).getDay();
+    var lead = (startDow + 6) % 7;   // grid starts Monday
+    var cells = "";
+    var i;
+
+    for (i = 0; i < lead; i++) cells += '<div></div>';
+
+    for (i = 0; i < TOTAL; i++) {
+      var ds = addDays(S.startDate, i);
+      var st = dayState(ds);
+      cells += '<button class="cell" data-act="day" data-d="' + ds + '"' +
+        ' data-s="' + st + '" data-today="' + (ds === t ? 1 : 0) + '"' +
+        ' data-cook="' + (isCookDay(ds) ? 1 : 0) + '"' +
+        ' title="' + esc(longDate(ds)) + '">' + (i + 1) + '</button>';
+    }
+
+    var dow = ["M", "T", "W", "T", "F", "S", "S"].map(function (x) {
+      return '<div class="cal-dow">' + x + '</div>';
+    }).join("");
+
+    var done = 0;
+    for (i = 0; i < TOTAL; i++) if (dayState(addDays(S.startDate, i)) === "done") done++;
+
+    return '<div class="card">' +
+      '<div class="card-h"><span class="eyebrow">Attempt ' + S.attempt + '</span>' +
+        '<span class="small num">' + done + ' / ' + TOTAL + ' logged</span></div>' +
+      '<div class="card-b">' +
+        '<div class="cal">' + dow + cells + '</div>' +
+        '<div class="legend">' +
+          '<div><span class="sw" style="background:var(--done);border-color:var(--done)"></span>Complete</div>' +
+          '<div><span class="sw" style="background:var(--fail-bg);border-color:var(--fail)"></span>Missed</div>' +
+          '<div><span class="sw" style="border-color:var(--accent)"></span>In progress</div>' +
+          '<div><span class="sw" style="background:transparent"></span>To come</div>' +
+          '<div><span class="sw" style="background:var(--accent);border:0;width:6px;height:6px;border-radius:50%"></span>Cook day</div>' +
+        '</div>' +
+        '<div class="small muted">Day 1 ' + esc(longDate(S.startDate)) + ' → day 75 ' + esc(longDate(endDate())) + '.</div>' +
+      '</div></div>';
+  }
+
+  function openDay(ds) {
+    var d = hasDay(ds) ? S.days[ds] : blankDay();
+    var c = checks(d);
+    var t = today();
+    var canEdit = (ds === t || ds === addDays(t, -1));
+    var list = [
+      ["No alcohol", c.noAlcohol], ["Diet", c.diet], ["No cheat meals", c.noCheat],
+      ["Water 4 L", c.water], ["2 × 45 min, one outdoors", c.workouts],
+      [pagesRead(d) ? pagesRead(d) + " pages read" : "10 pages", c.reading],
+      ["Progress photo", c.photo]
+    ].map(function (r) {
+      return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)">' +
+        '<span>' + esc(r[0]) + '</span>' +
+        '<span class="num" style="color:' + (r[1] ? "var(--done)" : "var(--ink-3)") + '">' + (r[1] ? "&#10003;" : "&mdash;") + '</span></div>';
+    }).join("");
+
+    dialog(
+      '<div><span class="eyebrow">Day ' + dayNum(ds) + '</span>' +
+      '<h2 style="font-size:17px">' + esc(longDate(ds)) + '</h2></div>' +
+      '<div>' + list + '</div>' +
+      (d.book
+        ? '<div class="small muted"><b>' + esc(d.book) + '</b>' +
+          (d.pageFrom != null && d.pageTo != null
+            ? ' — p.' + d.pageFrom + ' to p.' + d.pageTo : "") + '</div>'
+        : "") +
+      (d.notes ? '<div class="small muted">' + esc(d.notes) + '</div>' : "") +
+      (canEdit
+        ? '<button class="btn btn-primary" data-act="edit-day" data-d="' + ds + '">Edit this day</button>'
+        : '<div class="small muted">Only today and yesterday can be edited. A streak you can back-fill isn\'t a streak.</div>') +
+      '<button class="btn" data-act="close">Close</button>'
+    );
+  }
+
+  /* ---------- meals ---------- */
+
+  function viewMeals() {
+    var ds = today();
+    if (dayNum(ds) < 1) ds = S.startDate;
+    var r = rotationFor(ds), cook = cookForDate(ds), ms = mealsFor(ds);
+    var wk = Math.max(1, Math.ceil(dayNum(ds) / 7));
+
+    /* Alternates are choices, not extra meals — they never count toward totals. */
+    var eaten = ms.filter(function (m) { return !m.alt; });
+    var totals = eaten.reduce(function (a, m) {
+      a.cal += m.cal; a.p += m.p; a.f += m.f; a.c += m.c; return a;
+    }, { cal: 0, p: 0, f: 0, c: 0 });
+    var hers = eaten.reduce(function (a, m) { return m.both ? a + m.cal : a; }, 0);
+
+    var num = 0;
+    var labels = ms.map(function (m, i) {
+      if (m.alt) return num + "b";
+      num++;
+      return (ms[i + 1] && ms[i + 1].alt) ? num + "a" : String(num);
+    });
+
+    var rows = ms.map(function (m, i) {
+      return '<div class="meal"' + (m.alt ? ' style="background:var(--surface-2)"' : "") + '>' +
+        '<div class="meal-n">' + labels[i] + '</div>' +
+        '<div class="meal-b">' +
+          '<div class="eyebrow">' + esc(m.slot) + (m.alt ? " · or this" : "") + '</div>' +
+          '<b>' + esc(m.name) + '</b>' +
+          '<div class="macros"><span>' + m.cal + ' kcal</span> · ' + m.p + 'P / ' + m.f + 'F / ' + m.c + 'C</div>' +
+          '<div class="ing">' + esc(m.ing) + '</div>' +
+          '<div class="tags">' +
+            (m.both ? '<span class="tag both">Both of you</span>' : '<span class="tag">Yours only</span>') +
+            (m.cold ? '<span class="tag">Cold-ready</span>' : "") +
+            (m.cook ? "" : '<span class="tag">No cooking</span>') +
+          '</div>' +
+        '</div></div>';
+    }).join("");
+
+    var shopKey = r.id + (cook === r.cook1 ? "1" : "2");
+    var shop = SHOPPING[shopKey];
+    var shopHtml = "";
+    if (shop) {
+      shopHtml = '<div class="card">' +
+        '<div class="card-h"><span class="eyebrow">Shopping list</span>' +
+          '<span class="small muted">' + shop.servings + ' servings</span></div>' +
+        '<div class="card-b">' +
+          shop.groups.map(function (g) {
+            return '<div><div class="eyebrow" style="margin-bottom:5px">' + esc(g.g) + '</div>' +
+              '<ul style="margin:0;padding-left:18px">' +
+              g.items.map(function (x) { return '<li class="small">' + esc(x) + '</li>'; }).join("") +
+              '</ul></div>';
+          }).join("") +
+          '<button class="btn btn-primary" data-act="copy-list" data-key="' + esc(shopKey) + '">' +
+            'Copy list for online shopping</button>' +
+          '<div class="small muted">Copies as plain text — paste it into Coles or Woolworths ' +
+          'online, a note, or a message.</div>' +
+        '</div></div>';
+    } else {
+      shopHtml = '<div class="card"><div class="card-b"><div class="small muted">' +
+        'Full quantities for rotation ' + esc(r.id) + ' are in <b>hard75/meal-plan.md</b> in the repo. ' +
+        'They scale from the per-serving amounts above &times; ' + cook.servings + ' servings.' +
+        '</div></div></div>';
+    }
+
+    return '<div class="card">' +
+        '<div class="card-h"><span class="eyebrow">Week ' + wk + ' · Rotation ' + esc(r.id) + '</span>' +
+          '<span class="small num">' + totals.cal + ' kcal · ' + totals.p + 'g P</span></div>' +
+        '<div class="card-b"><div class="small muted">' +
+          'Your five meals for ' + esc(longDate(ds)) + '. Breakfast runs two ways — ' +
+          'cook it from the batch or take the no-cook bowl, whichever you feel like. ' +
+          'Your partner takes breakfast, lunch and dinner (' + hers + ' kcal). ' +
+          'Add 1–2 pieces of fruit each.' +
+        '</div></div>' + rows + '</div>' +
+      '<div class="card">' +
+        '<div class="card-h"><span class="eyebrow">Current cook</span>' +
+          '<span class="small muted">' + esc(cook.day) + '</span></div>' +
+        '<div class="card-b"><div class="small">' +
+          '<b>' + esc(cook.day) + '</b> cook covers <b>' + esc(cook.covers) + '</b> — ' + cook.servings +
+          ' cooked servings (' + cook.meals.length + ' recipes), with the remaining breakfasts taken ' +
+          'as the no-cook bowl. Sunday runs ~70 min, Wednesday ~100 min.' +
+        '</div></div></div>' +
+      shopHtml;
+  }
+
+  /* ---------- stats ---------- */
+
+  function viewStats() {
+    var t = today(), n = Math.max(0, Math.min(TOTAL, dayNum(t) - 1));
+    var done = 0, water = 0, waterDays = 0, out = 0, mins = 0, pages = 0, i, ds, d;
+    var books = [];
+
+    for (i = 0; i < TOTAL; i++) {
+      ds = addDays(S.startDate, i);
+      if (ds > t || !hasDay(ds)) continue;
+      d = S.days[ds];
+      if (isComplete(d)) done++;
+      water += d.water * 0.5; waterDays++;
+      pages += pagesRead(d);
+      if (d.book && books.indexOf(d.book) === -1) books.push(d.book);
+      d.workouts.forEach(function (w) {
+        mins += (w.min || 0);
+        if (w.outdoor && w.min >= WORKOUT_MIN) out++;
+      });
+    }
+
+    var weights = [];
+    for (i = 0; i < TOTAL; i++) {
+      ds = addDays(S.startDate, i);
+      if (hasDay(ds) && S.days[ds].weight != null && S.days[ds].weight !== "") {
+        weights.push({ d: ds, w: +S.days[ds].weight });
+      }
+    }
+    var wDelta = weights.length > 1 ? (weights[weights.length - 1].w - weights[0].w) : null;
+
+    var cards = [
+      [done, "Days complete"],
+      [Math.max(0, TOTAL - Math.max(0, dayNum(t) - 1)), "Days remaining"],
+      [waterDays ? (water / waterDays).toFixed(1) + " L" : "—", "Average water"],
+      [out, "Outdoor sessions"],
+      [(mins / 60).toFixed(1) + " h", "Time trained"],
+      [pages, "Pages read"],
+      [wDelta == null ? "—" : (wDelta > 0 ? "+" : "") + wDelta.toFixed(1) + " kg", "Weight change"]
+    ].map(function (s) {
+      return '<div class="stat"><div class="v">' + esc(s[0]) + '</div><div class="k">' + esc(s[1]) + '</div></div>';
+    }).join("");
+
+    var booksHtml = books.length
+      ? '<div class="card"><div class="card-h"><span class="eyebrow">Books</span>' +
+        '<span class="small muted">' + books.length + '</span></div>' +
+        books.map(function (b) {
+          return '<div class="task" style="cursor:default"><span class="task-t"><b>' + esc(b) + '</b></span></div>';
+        }).join("") + '</div>'
+      : "";
+
+    var hist = "";
+    if (S.history.length) {
+      hist = '<div class="card"><div class="card-h"><span class="eyebrow">Previous attempts</span></div>' +
+        '<div class="scroll-x"><table class="hist"><thead><tr>' +
+        '<th>#</th><th>Started</th><th>Got to</th><th>Broke on</th></tr></thead><tbody>' +
+        S.history.map(function (h) {
+          return '<tr><td class="n">' + h.attempt + '</td><td class="n">' + esc(h.start) + '</td>' +
+            '<td class="n">Day ' + h.daysCompleted + '</td><td>' + esc(h.reason || "—") + '</td></tr>';
+        }).join("") +
+        '</tbody></table></div></div>';
+    }
+
+    return '<div class="card"><div class="card-h"><span class="eyebrow">Attempt ' + S.attempt + '</span>' +
+      '<span class="small muted">since ' + esc(longDate(S.startDate)) + '</span></div>' +
+      '<div class="stats">' + cards + '</div></div>' + booksHtml + hist;
+  }
+
+  /* ---------- setup ---------- */
+
+  function viewSetup() {
+    var first = !S.setupDone;
+    var h = "";
+
+    if (first) {
+      h += '<div class="card"><div class="card-h"><span class="eyebrow">Start here</span></div>' +
+        '<div class="card-b">' +
+        '<p style="margin:0" class="small">Seven things every day for seventy-five days: no alcohol, ' +
+        'stick to the diet, no cheat meals, 4 L of water, two 45-minute workouts with one outdoors, ' +
+        '10 pages, and a progress photo. Miss any one and the count goes back to day 1.</p>' +
+        '<p style="margin:0" class="small muted"><b>Everything stays on this device.</b> There is no account ' +
+        'and no server. That also means nothing syncs to your other phone or laptop — export a backup weekly.</p>' +
+        '</div></div>';
+    }
+
+    h += '<div class="card"><div class="card-h"><span class="eyebrow">The challenge</span></div><div class="card-b">' +
+      '<div class="field"><label>Day 1</label>' +
+        '<input type="date" data-act="start" value="' + esc(S.startDate) + '">' +
+        '<div class="hint">Day 75 lands on ' + esc(longDate(endDate())) + '.</div></div>' +
+      (first ? '<button class="btn btn-primary" data-act="begin">Lock it in</button>' : "") +
+      '</div></div>';
+
+    h += '<div class="card"><div class="card-h"><span class="eyebrow">Reminders</span></div><div class="card-b">' +
+      '<div class="btn-row">' +
+        '<div class="field"><label>Morning</label><input type="time" data-act="morning" value="' + esc(S.settings.morning) + '"></div>' +
+        '<div class="field"><label>Evening</label><input type="time" data-act="evening" value="' + esc(S.settings.evening) + '"></div>' +
+      '</div>' +
+      '<button class="btn btn-primary" data-act="ics">Download calendar file</button>' +
+      '<div class="small muted">Import the .ics once into your phone calendar. It adds 75 morning and ' +
+      '75 evening reminders, both weekly cook sessions, a weekly backup nudge, and day 75 itself. ' +
+      'Re-download if you change the start date.' +
+      (hosted() ? ' <b>On this hosted page it saves as a .txt</b> — rename it to .ics before opening it.' : "") +
+      '</div>' +
+      '</div></div>';
+
+    h += '<div class="card"><div class="card-h"><span class="eyebrow">Your data</span></div><div class="card-b">' +
+      '<div class="btn-row">' +
+        '<button class="btn" data-act="export">Export</button>' +
+        '<label class="btn" style="text-align:center;cursor:pointer">Import' +
+          '<input type="file" accept="application/json,.json" data-act="import" style="display:none"></label>' +
+      '</div>' +
+      '<div class="small muted">' +
+        (S.settings.lastBackupAt ? "Last export: " + esc(longDate(S.settings.lastBackupAt)) + "." : "Never exported.") +
+        ' The export is a small JSON file with every day, note and weight — photos stay in this browser. ' +
+        'Import replaces everything.' +
+      '</div>' +
+      '</div></div>';
+
+    h += '<div class="card"><div class="card-h"><span class="eyebrow">Danger zone</span></div><div class="card-b">' +
+      '<div class="field"><label>Pretend today is</label>' +
+        '<input type="date" data-act="override" value="' + esc(S.settings.dateOverride || "") + '">' +
+        '<div class="hint">For testing the calendar and counters. Clear the field to use the real date.</div></div>' +
+      '<button class="btn btn-danger" data-act="wipe">Erase everything</button>' +
+      '</div></div>';
+
+    return h;
+  }
+
+  /* ============================ dialogs ============================ */
+
+  function dialog(html) {
+    $dlgB.innerHTML = html;
+    if (typeof $dlg.showModal === "function") $dlg.showModal();
+    else $dlg.setAttribute("open", "");
+  }
+  function closeDialog() {
+    if (typeof $dlg.close === "function") $dlg.close();
+    else $dlg.removeAttribute("open");
+  }
+
+  function failDialog() {
+    var opts = ["Drank alcohol", "Off the diet / cheat meal", "Missed a workout",
+                "Both workouts indoors", "Short of 4 L water", "Didn't read", "No progress photo", "Something else"];
+    dialog(
+      '<div><span class="eyebrow">Day ' + dayNum(today()) + '</span>' +
+      '<h2 style="font-size:17px">Back to day one</h2></div>' +
+      '<p class="small muted" style="margin:0">This archives the current run and restarts the count at ' +
+      'day 1 tomorrow, ' + esc(longDate(addDays(today(), 1))) + '. Your logged days are kept in Stats.</p>' +
+      '<div class="field"><label>What broke</label><select data-act="fail-reason">' +
+        opts.map(function (o) { return '<option>' + esc(o) + '</option>'; }).join("") +
+      '</select></div>' +
+      '<button class="btn btn-danger" data-act="fail-confirm">Reset to day 1</button>' +
+      '<button class="btn" data-act="close">Cancel</button>'
+    );
+  }
+
+  function doFail(reason) {
+    var t = today();
+    undoSnapshot = JSON.parse(JSON.stringify(S));
+    S.history.unshift({
+      attempt: S.attempt, start: S.startDate, failedOn: t,
+      reason: reason, daysCompleted: Math.max(0, dayNum(t) - 1)
+    });
+    S.attempt += 1;
+    S.startDate = addDays(t, 1);
+    S.days = {};
+    save();
+    closeDialog();
+    view = "today";
+    render();
+    banner('Reset to day 1. <a href="#" data-act="undo" style="color:var(--accent)">Undo</a>');
+  }
+
+  var bannerTimer = null;
+  function banner(html) {
+    var el = document.createElement("div");
+    el.className = "banner warn";
+    // pointer-events:none so a toast never blocks the controls underneath it;
+    // its own links opt back in.
+    el.style.cssText = "position:fixed;left:12px;right:12px;bottom:70px;z-index:30;max-width:536px;" +
+      "margin:0 auto;box-shadow:0 6px 24px rgba(0,0,0,.25);pointer-events:none;background:var(--surface)";
+    el.innerHTML = html;
+    Array.prototype.forEach.call(el.querySelectorAll("a"), function (a) {
+      a.style.pointerEvents = "auto";
+    });
+    document.body.appendChild(el);
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(function () { el.remove(); }, 12000);
+  }
+
+  /* ============================ events ============================ */
+
+  document.addEventListener("click", function (e) {
+    var el = e.target.closest("[data-act], [data-nav]");
+    if (!el) return;
+    var act = el.dataset.act, ds = today(), d;
+
+    if (el.dataset.nav) { view = el.dataset.nav; render(); return; }
+
+    switch (act) {
+      case "toggle":
+        d = getDay(ds);
+        if (el.dataset.k === "photo" && !d.photo) {
+          banner("Take the photo with the button below — the box ticks itself once it's saved.");
+          return;
+        }
+        d[el.dataset.k] = !d[el.dataset.k];
+        save(); render();
+        break;
+
+      case "water":
+        d = getDay(ds);
+        var i = +el.dataset.i;
+        d.water = (d.water === i + 1) ? i : i + 1;
+        save(); render();
+        break;
+
+      case "wo-out":
+        d = getDay(ds);
+        d.workouts[+el.dataset.i].outdoor = !d.workouts[+el.dataset.i].outdoor;
+        save(); render();
+        break;
+
+      case "fail": e.preventDefault(); failDialog(); break;
+      case "fail-confirm":
+        doFail(document.querySelector("[data-act='fail-reason']").value);
+        break;
+      case "undo":
+        e.preventDefault();
+        if (undoSnapshot) { S = undoSnapshot; undoSnapshot = null; save(); render(); banner("Restored."); }
+        break;
+
+      case "close": closeDialog(); break;
+      case "day": openDay(el.dataset.d); break;
+      case "edit-day":
+        closeDialog();
+        if (el.dataset.d !== ds) S.settings.dateOverride = el.dataset.d;
+        view = "today"; save(); render();
+        break;
+
+      case "copy-list": copyText(shoppingText(el.dataset.key)); break;
+
+      case "go-meals": view = "meals"; render(); break;
+      case "go-setup": e.preventDefault(); view = "setup"; render(); break;
+
+      case "begin":
+        S.setupDone = true; save(); view = "today"; render();
+        break;
+
+      case "ics":
+        offerFile("75-hard-" + S.startDate + ".ics", buildICS(), "text/calendar",
+          "Calendar file downloaded — open it to import the reminders.");
+        break;
+
+      case "export":
+        S.settings.lastBackupAt = ds;
+        save();
+        offerFile("75-hard-backup-" + ds + ".json", JSON.stringify(S, null, 2),
+          "application/json", "Backup saved. Keep it somewhere you'll find it.");
+        render();
+        break;
+
+      case "wipe":
+        dialog('<h2 style="font-size:17px">Erase everything?</h2>' +
+          '<p class="small muted" style="margin:0">Every logged day, every photo, every past attempt. ' +
+          'There is no copy on a server to restore from.</p>' +
+          '<button class="btn btn-danger" data-act="wipe-confirm">Erase</button>' +
+          '<button class="btn" data-act="close">Cancel</button>');
+        break;
+
+      case "wipe-confirm":
+        localStorage.removeItem(KEY);
+        try { indexedDB.deleteDatabase("hard75"); } catch (x) {}
+        S = defaults(); dbp = null;
+        closeDialog(); view = "setup"; render();
+        break;
+    }
+  });
+
+  /* Text fields must persist as they're typed: a `change` event only fires on
+     blur, so the last field touched before closing the tab would never save. */
+  function refreshLive() {
+    if (!S.setupDone) return;
+    var ds = today(), n = dayNum(ds);
+    if (n < 1 || n > TOTAL) return;
+    var d = getDay(ds), c = checks(d);
+
+    var wos = document.querySelectorAll(".wo");
+    for (var i = 0; i < wos.length; i++) {
+      var w = d.workouts[i];
+      if (!w) continue;
+      var o = wos[i].querySelector(".wo-min-out");
+      if (o) {
+        o.textContent = (w.min || 0) + " / " + WORKOUT_MIN + " min";
+        o.style.color = w.min >= WORKOUT_MIN ? "var(--done)" : "var(--ink-3)";
+      }
+    }
+
+    var ts = document.getElementById("train-status");
+    if (ts) {
+      ts.textContent = c.workouts ? "Requirement met" : "2 × 45 min, one outdoors";
+      ts.className = "small" + (c.workouts ? "" : " muted");
+    }
+
+    var ps = document.getElementById("pages-status");
+    if (ps) {
+      ps.textContent = pagesRead(d) + " / " + PAGES_MIN + " pages";
+      ps.style.color = c.reading ? "var(--done)" : "var(--ink-3)";
+    }
+
+    var slot = document.getElementById("done-slot");
+    if (slot) {
+      slot.innerHTML = isComplete(d)
+        ? '<div class="banner done"><b>Day ' + n + ' logged.</b>&nbsp;Everything done.</div>' : "";
+    }
+  }
+
+  document.addEventListener("input", function (e) {
+    var el = e.target, act = el.dataset ? el.dataset.act : null;
+    if (!act) return;
+    var ds = today(), d;
+
+    if (act === "wo-type") { d = getDay(ds); d.workouts[+el.dataset.i].type = el.value; save(); }
+    else if (act === "wo-min") {
+      d = getDay(ds); d.workouts[+el.dataset.i].min = Math.max(0, +el.value || 0);
+      save(); refreshLive();
+    }
+    else if (act === "book") { d = getDay(ds); d.book = el.value; save(); }
+    else if (act === "pfrom" || act === "pto") {
+      d = getDay(ds);
+      d[act === "pfrom" ? "pageFrom" : "pageTo"] = el.value === "" ? null : Math.max(0, +el.value || 0);
+      save(); refreshLive();
+    }
+    else if (act === "weight") { d = getDay(ds); d.weight = el.value === "" ? null : +el.value; save(); }
+    else if (act === "notes") { d = getDay(ds); d.notes = el.value; save(); }
+  });
+
+  document.addEventListener("change", function (e) {
+    var el = e.target;
+    var act = el.dataset.act;
+    if (!act) return;
+    var ds = today(), d;
+
+    switch (act) {
+      case "start":
+        if (el.value) { S.startDate = el.value; save(); render(); }
+        break;
+      case "morning": S.settings.morning = el.value || "06:00"; save(); break;
+      case "evening": S.settings.evening = el.value || "20:00"; save(); break;
+      case "override":
+        S.settings.dateOverride = el.value || null; save(); render();
+        break;
+      /* wo-type, wo-min, weight and notes are handled on `input` above.
+         They must NOT re-render here: `change` fires on blur, so rebuilding the
+         view would tear out the field the user just tabbed into. */
+
+      case "photo":
+        if (!el.files || !el.files[0]) return;
+        downscale(el.files[0], 1080, 0.72)
+          .then(function (b) { return putPhoto(ds, b); })
+          .then(function () { getDay(ds).photo = true; save(); render(); })
+          .catch(function (err) {
+            banner("Couldn't save the photo: " + esc(err.message || "storage unavailable") + ".");
+          });
+        break;
+
+      case "import":
+        if (!el.files || !el.files[0]) return;
+        var fr = new FileReader();
+        fr.onload = function () {
+          try {
+            var p = JSON.parse(fr.result);
+            if (!p || typeof p !== "object" || !p.days || !p.startDate) throw new Error("not a backup file");
+            S = p;
+            var def = defaults(), k;
+            for (k in def) if (!(k in S)) S[k] = def[k];
+            for (k in def.settings) if (!(k in S.settings)) S.settings[k] = def.settings[k];
+            save(); view = "today"; render();
+            banner("Backup restored.");
+          } catch (x) {
+            banner("That file isn't a 75 Hard backup.");
+          }
+        };
+        fr.readAsText(el.files[0]);
+        break;
+    }
+  });
+
+  /* keep the counter honest if the page is left open overnight */
+  var lastSeen = today();
+  setInterval(function () {
+    var t = today();
+    if (t !== lastSeen) { lastSeen = t; render(); }
+  }, 60000);
+
+  render();
+})();
+</script>
