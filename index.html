@@ -286,11 +286,6 @@
   dialog::backdrop { background: rgba(0,0,0,.55); }
   .dlg-b { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
 
-  .photo-prev {
-    width: 100%; max-height: 340px; object-fit: cover; object-position: top;
-    border-radius: 2px; display: block; border: 1px solid var(--line); background: var(--surface-2);
-  }
-
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
@@ -327,7 +322,7 @@
     { k: "noAlcohol", t: "No alcohol",      s: "Zero. Not one." },
     { k: "diet",      t: "Stuck to the diet", s: "All meals on plan" },
     { k: "noCheat",   t: "No cheat meals",  s: "Nothing off plan, no exceptions" },
-    { k: "photo",     t: "Progress photo",  s: "Stays on this device" }
+    { k: "photo",     t: "Progress photo",  s: "Taken and kept wherever you keep photos" }
   ];
 
   /* ============================ meal plan ============================ */
@@ -648,71 +643,6 @@
     return touched(d) ? "partial" : "pending";
   }
 
-  /* ============================ photos (IndexedDB) ============================ */
-
-  /* IndexedDB is restricted on file:// in some browsers and absent in others.
-     When it's gone the photo rule would be permanently unsatisfiable, so the
-     app falls back to an honest tick-box instead of holding the day hostage. */
-  var photoStore = true;
-
-  var dbp = null;
-  function db() {
-    if (!dbp) {
-      dbp = new Promise(function (res, rej) {
-        if (!window.indexedDB) { rej(new Error("no storage")); return; }
-        var r;
-        try { r = indexedDB.open("hard75", 1); }
-        catch (e) { rej(e); return; }
-        r.onupgradeneeded = function () { r.result.createObjectStore("photos"); };
-        r.onsuccess = function () { res(r.result); };
-        r.onerror = function () { rej(r.error); };
-        r.onblocked = function () { rej(new Error("storage blocked")); };
-      });
-      dbp.catch(function () { photoStore = false; });
-    }
-    return dbp;
-  }
-
-  function putPhoto(k, blob) {
-    return db().then(function (d) {
-      return new Promise(function (res, rej) {
-        var t = d.transaction("photos", "readwrite");
-        t.objectStore("photos").put(blob, k);
-        t.oncomplete = function () { res(); };
-        t.onerror = function () { rej(t.error); };
-      });
-    });
-  }
-
-  function getPhoto(k) {
-    return db().then(function (d) {
-      return new Promise(function (res, rej) {
-        var t = d.transaction("photos", "readonly");
-        var q = t.objectStore("photos").get(k);
-        q.onsuccess = function () { res(q.result || null); };
-        q.onerror = function () { rej(q.error); };
-      });
-    });
-  }
-
-  function downscale(file, max, q) {
-    return new Promise(function (res, rej) {
-      var url = URL.createObjectURL(file);
-      var img = new Image();
-      img.onload = function () {
-        var s = Math.min(1, max / Math.max(img.width, img.height));
-        var c = document.createElement("canvas");
-        c.width = Math.round(img.width * s);
-        c.height = Math.round(img.height * s);
-        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-        URL.revokeObjectURL(url);
-        c.toBlob(function (b) { b ? res(b) : rej(new Error("Could not encode the photo.")); }, "image/jpeg", q);
-      };
-      img.onerror = function () { URL.revokeObjectURL(url); rej(new Error("That file isn't a readable image.")); };
-      img.src = url;
-    });
-  }
-
   /* ============================ meal helpers ============================ */
 
   /* Anchored to the Monday of the week day 1 falls in, not to day 1 itself.
@@ -970,7 +900,6 @@
     Array.prototype.forEach.call(document.querySelectorAll("#nav button"), function (b) {
       b.setAttribute("data-on", b.dataset.nav === view ? "1" : "0");
     });
-    if (view === "today") loadTodayPhoto();
   }
 
   function renderHeader() {
@@ -1113,23 +1042,6 @@
         '<div class="small" id="pages-note">' + pagesNote(d) + '</div>' +
       '</div></div>';
 
-    // photo + weight + notes
-    h += '<div class="card">' +
-      '<div class="card-h"><span class="eyebrow">Progress photo</span>' +
-      '<span class="small muted">' + (d.photo ? (photoStore ? "Saved on this device" : "Marked as taken") : "Not taken") + '</span></div>' +
-      '<div class="card-b">' +
-        '<div id="photo-slot"></div>' +
-        '<label class="btn" style="text-align:center;cursor:pointer">' +
-          (d.photo ? "Replace photo" : "Take / choose photo") +
-          '<input type="file" accept="image/*" capture="environment" data-act="photo" style="display:none">' +
-        '</label>' +
-        (photoStore ? "" :
-          '<div class="small muted">This browser won\'t let the page store images — ' +
-          'common when the file is opened straight from disk. Keep taking the photo in your ' +
-          'camera roll and tick <b>Progress photo</b> above by hand, or serve the file over ' +
-          'http:// to store them here.</div>') +
-      '</div></div>';
-
     h += '<div class="card"><div class="card-b">' +
       '<div class="field"><label>Weight (kg) — optional</label>' +
         '<input type="number" step="0.1" inputmode="decimal" data-act="weight" placeholder="84.0" value="' + (d.weight != null ? d.weight : "") + '"></div>' +
@@ -1144,20 +1056,6 @@
       : '<button class="btn btn-danger" data-act="fail">I missed something today</button>';
 
     return h;
-  }
-
-  function loadTodayPhoto() {
-    var slot = document.getElementById("photo-slot");
-    if (!slot) return;
-    var ds = activeDay();
-    if (!S.days[ds] || !S.days[ds].photo) { slot.innerHTML = ""; return; }
-    getPhoto(ds).then(function (b) {
-      if (!b) { slot.innerHTML = '<div class="small muted">Photo record found but the image is missing.</div>'; return; }
-      var u = URL.createObjectURL(b);
-      slot.innerHTML = '<img class="photo-prev" alt="Progress photo for ' + esc(longDate(ds)) + '" src="' + u + '">';
-    }).catch(function () {
-      slot.innerHTML = '<div class="small muted">Photo storage unavailable in this browser.</div>';
-    });
   }
 
   /* ---------- calendar ---------- */
@@ -1470,7 +1368,7 @@
       '</div>' +
       '<div class="small muted">' +
         (S.settings.lastBackupAt ? "Last export: " + esc(longDate(S.settings.lastBackupAt)) + "." : "Never exported.") +
-        ' The export is a small JSON file with every day, note and weight — photos stay in this browser. ' +
+        ' The export is a small JSON file with every day, note and weight. ' +
         'Import replaces everything.' +
       '</div>' +
       '</div></div>';
@@ -1525,9 +1423,7 @@
       reachedDay: Math.max(0, dayNum(t) - 1),
       daysCompleted: complete,
       /* Keep the records. Weights and notes across a failed run are the part
-         of this that's worth more at day 150 than it was at day 30 — and the
-         photos in IndexedDB are keyed by date, so throwing the days away
-         orphaned them with nothing left pointing at them. */
+         of this that's worth more at day 150 than it was at day 30. */
       days: S.days
     });
     S.attempt += 1;
@@ -1575,12 +1471,6 @@
     switch (act) {
       case "toggle":
         d = getDay(ad);
-        /* The photo box ticks itself once an image is stored. Where the browser
-           won't store images at all, it goes back to being a plain tick. */
-        if (el.dataset.k === "photo" && !d.photo && photoStore) {
-          banner("Take the photo with the button below — the box ticks itself once it's saved.");
-          return;
-        }
         d[el.dataset.k] = !d[el.dataset.k];
         save(); render();
         break;
@@ -1643,7 +1533,7 @@
 
       case "wipe":
         dialog('<h2 style="font-size:17px">Erase everything?</h2>' +
-          '<p class="small muted" style="margin:0">Every logged day, every photo, every past attempt. ' +
+          '<p class="small muted" style="margin:0">Every logged day and every past attempt. ' +
           'There is no copy on a server to restore from.</p>' +
           '<button class="btn btn-danger" data-act="wipe-confirm">Erase</button>' +
           '<button class="btn" data-act="close">Cancel</button>');
@@ -1651,8 +1541,9 @@
 
       case "wipe-confirm":
         localStorage.removeItem(KEY);
+        // an older version of this app kept progress photos here
         try { indexedDB.deleteDatabase("hard75"); } catch (x) {}
-        S = defaults(); dbp = null; editDay = null; photoStore = true;
+        S = defaults(); editDay = null;
         closeDialog(); view = "setup"; render();
         break;
     }
@@ -1738,22 +1629,6 @@
          They must NOT re-render here: `change` fires on blur, so rebuilding the
          view would tear out the field the user just tabbed into. */
 
-      case "photo":
-        if (!el.files || !el.files[0]) return;
-        downscale(el.files[0], 1080, 0.72)
-          .then(function (b) { return putPhoto(ds, b); })
-          .then(function () { getDay(ds).photo = true; save(); render(); })
-          .catch(function (err) {
-            /* If the image can't be stored, the photo rule would be impossible
-               to satisfy — fall back to ticking it by hand rather than making
-               the day unclosable. A bad image file is a different problem. */
-            if (!/readable image|encode/.test(err && err.message || "")) photoStore = false;
-            render();
-            banner("Couldn't save the photo: " + esc(err.message || "storage unavailable") +
-              (photoStore ? "." : ". Tick <b>Progress photo</b> by hand instead."));
-          });
-        break;
-
       case "import":
         if (!el.files || !el.files[0]) return;
         var fr = new FileReader();
@@ -1792,10 +1667,6 @@
     // yesterday stopped being yesterday — drop the editing mode with the date
     if (t !== lastSeen) { lastSeen = t; editDay = null; render(); }
   }, 60000);
-
-  /* Probe the photo store up front so the Today view can offer the manual tick
-     immediately, rather than only after a failed upload. */
-  db().catch(function () { if (view === "today") render(); });
 
   render();
 })();

@@ -14,11 +14,6 @@ Open `index.html` in any browser — from disk, or over a local server:
 python3 -m http.server 4173   # then http://localhost:4173
 ```
 
-Photos need IndexedDB, which some browsers restrict on `file://`. When the page
-can't store images it says so and lets you tick the photo rule by hand, so a day
-can still be closed — but for the photos themselves, use the local server or a
-hosted copy.
-
 On a phone: open it, then **Share → Add to Home Screen**. It behaves like an app
 from there.
 
@@ -36,10 +31,9 @@ static host, or just keep opening the file locally.
 | What | Where |
 |---|---|
 | Days, water, workouts, reading, notes, weights, past attempts | `localStorage`, key `hard75.v1` |
-| Progress photos | `IndexedDB`, database `hard75` — downscaled to 1080 px JPEG on capture |
 
-Both are **per-browser and per-device**. Nothing syncs. Nothing is uploaded.
-There is no backend to leak.
+That's the whole store, and it's **per-browser and per-device**. Nothing syncs.
+Nothing is uploaded. There is no backend to leak.
 
 This has one sharp edge: clearing site data wipes the streak. So —
 
@@ -48,7 +42,7 @@ This has one sharp edge: clearing site data wipes the streak. So —
 - The app nags you if it's been 7 days since the last export, and the calendar
   file adds a weekly backup reminder. A cancelled or failed download doesn't
   count as a backup — the nag only clears once the file actually saves.
-- Photos are **not** in the JSON export — they stay in the browser.
+- The export is everything. The app stores nothing outside that one key.
 
 Reading the meal plan and shopping lists works identically on every device,
 since that content is baked into the page. Only the logging is per-device — so
@@ -72,7 +66,9 @@ A day only counts when all seven are true:
    count is derived rather than self-declared. The next day inherits the book
    and starts at the page you stopped on. Starting a new book reads as a
    negative span, so the app says so rather than silently scoring zero.
-7. Progress photo taken
+7. Progress photo taken — the app doesn't hold the image. Take it with your
+   camera and tick the box; the photos stay in your camera roll where you can
+   actually flip through them, and this stays a page with no image store in it.
 
 Four of the seven are enforced from real numbers rather than a checkbox: water,
 workout minutes, the outdoors requirement, and pages read.
