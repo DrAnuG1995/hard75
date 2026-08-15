@@ -5,6 +5,8 @@ it. No build step, no dependencies, no server, no database, no account.
 
 - **`index.html`** — the whole app. Open it and it runs.
 - **`meal-plan.md`** — macros, recipes, cook schedule, shopping lists.
+- **`test/`** — a browser harness that drives the real page. Dev-only; see
+  [Testing](#testing).
 
 ## Running it
 
@@ -122,3 +124,25 @@ rotation as the days it feeds.
 Setup → "Pretend today is" overrides the current date so you can jump to day 40
 or day 75 and check the counters, the calendar and the rotation logic without
 waiting. Clear the field to go back to the real date.
+
+### The check harness
+
+There is nothing to unit-test — the app is one file with no exports — so
+`test/check.mjs` drives the real page in headless Chromium and asserts on what
+it actually does. It serves the repo itself on a spare port, because
+`localStorage` and downloads behave differently over `file://`.
+
+```bash
+cd test && npm install && npx playwright install chromium && npm test
+```
+
+48 checks, exit 1 on any failure. Among them: a day won't close on 3.5 L of
+water, two indoor workouts, a 44-minute session or 9 pages; the fail flow
+archives and the undo restores; export → clear site data → import round-trips;
+the `.ics` carries 75 daily repeats in floating local time and folds to 75
+octets; the dark theme paints its own background; the page makes no external
+request and grows no `<!doctype>`; and the Meals tab shows the list for the
+cook you're about to do rather than the one you've eaten.
+
+The app itself still has **no dependencies and no build step** — `test/` is the
+only thing here that installs anything, and `index.html` never touches it.
