@@ -291,6 +291,33 @@ console.log('\nRecipes and schedule');
     await ctx.close();
   }
 
+  /* Anything a recipe names has to be on that cook's shopping list. This drifted
+     once already — the hash asked for chipotle while the list carried chilli
+     flakes, which nothing used — and it only surfaced at the stove. */
+  {
+    const VOCAB = ['cumin', 'chipotle', 'smoked paprika', 'oregano', 'fennel', 'ras el hanout',
+      'garam masala', 'gochujang', 'soy', 'oyster', 'sesame oil', 'passata', 'couscous',
+      'black beans', 'salsa', 'peanut butter', 'thyme', 'bay', 'coriander', 'lemon', 'lime',
+      'garlic', 'ginger', 'dill', 'honey', 'celery'];
+    /* Evaluate the data half of the app directly — everything up to the first
+       DOM reference is plain data and pure functions, so it runs under Node. */
+    const src = readFileSync(join(ROOT, 'index.html'), 'utf8');
+    const body = src.slice(src.indexOf('<script>') + 8, src.lastIndexOf('</script>'));
+    const data = body.slice(0, body.indexOf('var $view = document.getElementById')) +
+      '\nreturn { ROTATIONS, METHOD, shoppingText };})();';
+    const { ROTATIONS, METHOD, shoppingText } = new Function('return ' + data.trim())();
+
+    for (const key of ['A1', 'A2', 'B1', 'B2']) {
+      const cook = ROTATIONS[key[0]][key[1] === '1' ? 'cook1' : 'cook2'];
+      const text = cook.meals
+        .map(m => m.ing + ' ' + (METHOD[m.name] || []).join(' ')).join(' ').toLowerCase();
+      const list = shoppingText(key).toLowerCase();
+      const gap = VOCAB.filter(v => text.includes(v) && !list.includes(v));
+      check(`${key}: every ingredient a recipe names is on its shopping list`,
+        gap.length === 0, `missing: ${gap.join(', ')}`);
+    }
+  }
+
   // the cook card must carry a timed schedule, in clock time
   for (const [date, label, first, last] of [
     ['2026-08-23', 'Sunday cook', '16:00', '17:10'],

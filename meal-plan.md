@@ -278,12 +278,13 @@ cooked chicken and mince. The ragu freezes best of the eight.
 
 ### Produce
 Potatoes 550 g · red capsicum 280 g · brown onion 300 g · cucumber 4 ·
-spring onion 1 bunch · garlic · ginger · bananas 4 · berries 320 g ·
+spring onion 1 bunch · lemons 2 · garlic · ginger · bananas 4 · berries 320 g ·
 fruit for daily extras 8 pieces
 
 ### Pantry
-High-protein wraps ×8 · basmati rice 500 g bag · gochujang · sesame seeds ·
-rolled oats · tikka spice or garam masala · smoked paprika, oregano
+High-protein wraps ×8 · basmati rice 500 g bag · gochujang · light soy ·
+sesame oil · sesame seeds · rolled oats · tikka spice or garam masala ·
+smoked paprika, oregano, cumin, ground coriander
 
 ### Dairy & supplements
 Greek yoghurt 2% **1.6 kg** (bowls, tikka marinade, shawarma sauce) ·
@@ -304,7 +305,7 @@ bananas 3 · berries 150 g · fruit 6 pieces
 
 **Pantry:** couscous 300 g · basmati 250 g · pasta 250 g · black beans 2 tins ·
 chunky salsa 1 jar · passata 2 × 700 g · ras el hanout · smoked paprika ·
-fennel seed · rolled oats · olive oil spray
+fennel seed · bay leaves · rolled oats · olive oil spray
 
 **Dairy & supps:** Greek yoghurt 2% 800 g (600 g for the bowls) · whey isolate
 150 g · peanut butter, small jar
@@ -319,7 +320,7 @@ brown onion 400 g · cucumber 4 · tomatoes 6 · lemon 2 · dill 1 bunch ·
 thyme 1 small bunch · garlic · ginger · bananas 4 · berries 200 g · fruit 8
 
 **Pantry:** basmati 500 g bag · jasmine rice 300 g · light soy · oyster sauce ·
-sesame oil · tikka spice or garam masala · rolled oats
+sesame oil · tikka spice or garam masala · dried oregano · rolled oats
 
 **Dairy & supps:** Greek yoghurt 2% 1.5 kg · whey isolate 200 g · peanut
 butter, small jar
