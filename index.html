@@ -357,15 +357,14 @@
     return { slot: slot, name: name, cal: cal, p: p, f: f, c: c, ing: ing, both: both, cold: cold, cook: true };
   }
 
-  /* Breakfast runs two ways: the cooked hash from the batch, or a no-cook dairy
-     bowl. Both land ~385 kcal / 36 g protein, so alternating never moves the
-     day's macros. One per rotation, so it varies week to week. */
+  /* Breakfast runs two ways: the cooked hash from the batch, or a no-cook bowl.
+     Both land ~385 kcal / 36 g protein, so alternating never moves the day's
+     macros. Two bowls against two rotations means the pairing is fixed rather
+     than drifting — rotation A weeks take the yoghurt bowl, rotation B weeks
+     the overnight oats — which is why each shopping list can name its bowl. */
   var NOCOOK = [
     { slot: "Breakfast", name: "Greek yoghurt, oats & berries", cal: 390, p: 36, f: 8, c: 42,
       ing: "250 g Greek yoghurt (2%) · 35 g rolled oats · 80 g berries · 10 g whey",
-      both: true, cold: true, cook: false, alt: true },
-    { slot: "Breakfast", name: "Cottage cheese & banana bowl", cal: 380, p: 36, f: 4, c: 50,
-      ing: "200 g light cottage cheese · 1 banana · 20 g oats · 10 g whey · 10 g honey, cinnamon",
       both: true, cold: true, cook: false, alt: true },
     { slot: "Breakfast", name: "Overnight oats, whey & peanut butter", cal: 385, p: 36, f: 9, c: 34,
       ing: "200 g Greek yoghurt · 30 g oats · 15 g whey · 8 g peanut butter · 50 g berries",
@@ -516,7 +515,6 @@
       "Freezes better than anything else on the plan."
     ],
     "Greek yoghurt, oats & berries": ["Stir it together. Ninety seconds, no heat."],
-    "Cottage cheese & banana bowl": ["Stir it together. Ninety seconds, no heat."],
     "Overnight oats, whey & peanut butter": [
       "Stir it together the night before and leave it in the fridge.",
       "This is the one bowl that needs thinking about in advance."
@@ -607,7 +605,7 @@
         { g: "Butcher", items: ["Beef mince, 5% fat — 400 g", "Chicken breast — 900 g", "Chicken thigh fillets, skinless — 450 g", "Beef rump, lean & trimmed — 800 g"] },
         { g: "Produce", items: ["Sweet potato — 350 g (1 large)", "Red capsicum — 250 g (2 medium)", "Brown onion — 200 g (2 small)", "Broccoli — 900 g (2 large heads)", "Chat potatoes — 400 g", "Lebanese cucumber — 2", "Tomatoes — 3", "Limes — 2 · Lemon — 1", "Coriander — 1 bunch · Dill — 1 small bunch", "Garlic — 1 bulb · Ginger — 1 thumb", "Bananas — 3 (shakes)", "Berries — 250 g (fresh or frozen)", "Fruit for daily extras — 6 pieces"] },
         { g: "Pantry", items: ["Long-grain rice, basmati or jasmine — 1 × 500 g bag", "Rolled oats — 1 bag (225 g used)", "Black beans — 2 × 400 g tins", "Chunky salsa — 1 × 400 g jar", "Light soy sauce · Oyster sauce · Sesame oil", "Olive oil spray", "Smoked paprika, cumin, dried oregano, chilli flakes"] },
-        { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 1 kg tub (750 g bowls + 180 g tzatziki)", "Whey isolate — 135 g needed", "Optional: light cottage cheese 200 g if you want the other bowl"] }
+        { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 1 kg tub (750 g bowls + 180 g tzatziki)", "Whey isolate — 135 g needed", "Breakfast bowl this week: Greek yoghurt, oats & berries"] }
       ]
     },
     "A2": {
@@ -616,25 +614,25 @@
         { g: "Butcher", items: ["Chicken breast — 1.24 kg (hash + tikka)", "Chicken thigh fillets — 1.15 kg", "Beef mince, 5% fat — 1.05 kg"] },
         { g: "Produce", items: ["Potatoes — 550 g", "Red capsicum — 280 g", "Brown onion — 300 g", "Cucumber — 4", "Spring onion — 1 bunch", "Garlic, ginger", "Bananas — 4", "Berries — 320 g", "Fruit for daily extras — 8 pieces"] },
         { g: "Pantry", items: ["High-protein wraps — 8", "Basmati rice — 500 g bag", "Gochujang", "Sesame seeds", "Rolled oats", "Tikka spice / garam masala", "Smoked paprika, oregano"] },
-        { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 1.6 kg (breakfast bowls, tikka marinade, shawarma sauce)", "Whey isolate — 180 g", "This week's no-cook bowl varies — check the meals above"] }
+        { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 1.6 kg (breakfast bowls, tikka marinade, shawarma sauce)", "Whey isolate — 180 g", "Breakfast bowl this week: Greek yoghurt, oats & berries"] }
       ]
     },
     "B1": {
       title: "Rotation B · Cook 1 · Sunday", servings: 18, nocook: 3,
       groups: [
         { g: "Butcher", items: ["Chicken breast — 1.8 kg (hash + Moroccan + burrito)", "Beef chuck or rump — 850 g"] },
-        { g: "Produce", items: ["Sweet potato — 350 g", "Red capsicum — 250 g", "Carrot — 3 · Zucchini — 2 · Celery — 2 sticks", "Brown onion — 300 g", "Limes — 2", "Coriander — 1 bunch", "Garlic — 1 bulb", "Bananas — 3", "Berries — 250 g", "Fruit for daily extras — 6 pieces"] },
+        { g: "Produce", items: ["Sweet potato — 350 g", "Red capsicum — 250 g", "Carrot — 3 · Zucchini — 2 · Celery — 2 sticks", "Brown onion — 300 g", "Limes — 2", "Coriander — 1 bunch", "Garlic — 1 bulb", "Bananas — 3", "Berries — 150 g", "Fruit for daily extras — 6 pieces"] },
         { g: "Pantry", items: ["Couscous — 300 g", "Basmati rice — 250 g", "Pasta — 250 g", "Black beans — 2 × 400 g tins", "Chunky salsa — 1 × 400 g jar", "Passata — 2 × 700 g", "Ras el hanout, smoked paprika, fennel seed", "Rolled oats", "Olive oil spray"] },
-        { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 800 g", "Whey isolate — 135 g", "This week's no-cook bowl varies — check the meals above"] }
+        { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 800 g (600 g for the bowls)", "Whey isolate — 150 g", "Peanut butter — small jar (24 g used)", "Breakfast bowl this week: overnight oats, whey & peanut butter"] }
       ]
     },
     "B2": {
       title: "Rotation B · Cook 2 · Wednesday", servings: 24, nocook: 4,
       groups: [
         { g: "Butcher", items: ["Chicken breast — 650 g (tikka)", "Chicken thigh fillets — 1.2 kg", "Beef mince, 5% fat — 520 g", "Beef rump, lean & trimmed — 1.05 kg"] },
-        { g: "Produce", items: ["Potatoes — 520 g", "Chat potatoes — 960 g", "Broccoli — 1.2 kg (3 heads)", "Brown onion — 400 g", "Cucumber — 4 · Tomatoes — 6", "Lemon — 2", "Dill — 1 bunch · Thyme — 1 small bunch", "Garlic, ginger", "Bananas — 4", "Berries — 320 g", "Fruit for daily extras — 8 pieces"] },
+        { g: "Produce", items: ["Potatoes — 520 g", "Chat potatoes — 960 g", "Broccoli — 1.2 kg (3 heads)", "Brown onion — 400 g", "Cucumber — 4 · Tomatoes — 6", "Lemon — 2", "Dill — 1 bunch · Thyme — 1 small bunch", "Garlic, ginger", "Bananas — 4", "Berries — 200 g", "Fruit for daily extras — 8 pieces"] },
         { g: "Pantry", items: ["Basmati rice — 500 g bag", "Jasmine rice — 300 g", "Light soy · Oyster sauce · Sesame oil", "Tikka spice / garam masala", "Rolled oats"] },
-        { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 1.5 kg (bowls, tzatziki, tikka marinade)", "Whey isolate — 180 g", "This week's no-cook bowl varies — check the meals above"] }
+        { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 1.5 kg (bowls, tzatziki, tikka marinade)", "Whey isolate — 200 g", "Peanut butter — small jar (32 g used)", "Breakfast bowl this week: overnight oats, whey & peanut butter"] }
       ]
     }
   };
@@ -860,8 +858,8 @@
 
   function mealsFor(ds) {
     var cook = cookForDate(ds);
-    /* Bowls cycle every 3 weeks against a 2-week main rotation, so the pairing
-       keeps shifting instead of locking to the same breakfast each rotation. */
+    /* One bowl per rotation: A weeks take the yoghurt bowl, B weeks the
+       overnight oats. */
     var nc = NOCOOK[weekIndex(ds) % NOCOOK.length];
     var out = [];
     ["Breakfast", "Lunch", "Afternoon", "Dinner"].forEach(function (slot) {
@@ -1329,8 +1327,12 @@
   }
 
   function viewMeals() {
-    var ds = today();
-    if (dayNum(ds) < 1) ds = S.startDate;
+    /* Before day 1 there are no meals to show yet, so the list jumps forward to
+       what you'll eat on day 1 — but the cook still has to be worked out from
+       the real date. The first Sunday cook happens the day *before* day 1, and
+       clamping here used to hide it on exactly the evening you needed it. */
+    var real = today();
+    var ds = dayNum(real) < 1 ? S.startDate : real;
     var r = rotationFor(ds), cook = cookForDate(ds), ms = mealsFor(ds);
     var wk = weekIndex(ds) + 1;
 
@@ -1338,8 +1340,8 @@
        you're eating out of. Cook nights are Sunday and Wednesday, so from the
        day before onwards the Meals tab switches to the upcoming batch. */
     var prep = null;
-    if (isCookDay(ds)) prep = { when: "tonight", plan: cookOn(ds) };
-    else if (isCookDay(addDays(ds, 1))) prep = { when: "tomorrow", plan: cookOn(addDays(ds, 1)) };
+    if (isCookDay(real)) prep = { when: "tonight", plan: cookOn(real) };
+    else if (isCookDay(addDays(real, 1))) prep = { when: "tomorrow", plan: cookOn(addDays(real, 1)) };
 
     /* Alternates are choices, not extra meals — they never count toward totals. */
     var eaten = ms.filter(function (m) { return !m.alt; });

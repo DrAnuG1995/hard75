@@ -252,12 +252,9 @@ console.log('\nSelf-containment');
 console.log('\nRecipes and schedule');
 {
   // every dish on every rotation must carry a method, not just tonight's four
-  /* A1, A2, B1, B2 — plus week 3, because the no-cook bowls cycle every three
-     weeks against a two-week rotation and the third bowl never shows up inside
-     the first two. Six dates is the smallest set that reaches all 16 dishes. */
+  // A1, A2, B1, B2 — one bowl per rotation, so four dates reach every dish
   const seen = new Set();
-  for (const date of ['2026-08-17', '2026-08-20', '2026-08-24', '2026-08-27',
-                      '2026-08-31', '2026-09-03']) {
+  for (const date of ['2026-08-17', '2026-08-20', '2026-08-24', '2026-08-27']) {
     const { ctx, page } = await fresh(browser, { settings: { dateOverride: date } });
     await page.click('[data-nav="meals"]');
     const meals = await page.locator('.meal').count();
@@ -266,9 +263,34 @@ console.log('\nRecipes and schedule');
     for (const n of await page.locator('.meal .meal-b b').allTextContents()) seen.add(n);
     await ctx.close();
   }
-  check('all 16 dishes across both rotations are covered', seen.size === 16, `${seen.size} distinct dishes`);
+  check('all 15 dishes across both rotations are covered', seen.size === 15, `${seen.size} distinct dishes`);
+  // the bowl is fixed per rotation now, so each week's list can name it
+  for (const [date, want] of [['2026-08-17', 'Greek yoghurt, oats & berries'],
+                              ['2026-08-24', 'Overnight oats, whey & peanut butter']]) {
+    const { ctx, page } = await fresh(browser, { settings: { dateOverride: date } });
+    await page.click('[data-nav="meals"]');
+    const names = await page.locator('.meal .meal-b b').allTextContents();
+    check(`${date}: breakfast bowl is ${want}`, names.includes(want), names.join(' / '));
+    check(`${date}: no cottage cheese anywhere`,
+      !(await page.locator('#view').textContent()).toLowerCase().includes('cottage'));
+    await ctx.close();
+  }
 }
 {
+  /* The very first cook is the Sunday *before* day 1 — the .ics schedules it
+     there. The meal list jumps forward to day 1 that evening, but the cook card
+     must still be the one you're actually about to make. */
+  {
+    const { ctx, page } = await fresh(browser, { settings: { dateOverride: '2026-08-16' } });
+    await page.click('[data-nav="meals"]');
+    check('the pre-start Sunday cook still shows its plan',
+      await page.locator('.step').count() > 0, 'no schedule on the night of the first cook');
+    check('and it is Rotation A Cook 1',
+      await page.locator('[data-act="copy-list"]').getAttribute('data-key') === 'A1',
+      await page.locator('[data-act="copy-list"]').getAttribute('data-key'));
+    await ctx.close();
+  }
+
   // the cook card must carry a timed schedule, in clock time
   for (const [date, label, first, last] of [
     ['2026-08-23', 'Sunday cook', '16:00', '17:10'],

@@ -102,13 +102,13 @@ land ~385 kcal and ~36 g protein, so **alternating never moves the day's macros*
 | No-cook bowl | kcal | P/F/C |
 |---|---|---|
 | **Greek yoghurt, oats & berries** — 250 g Greek yoghurt (2%) · 35 g rolled oats · 80 g berries · 10 g whey | 390 | 36/8/42 |
-| **Cottage cheese & banana bowl** — 200 g light cottage cheese · 1 banana · 20 g oats · 10 g whey · 10 g honey, cinnamon | 380 | 36/4/50 |
 | **Overnight oats, whey & peanut butter** — 200 g Greek yoghurt · 30 g oats · 15 g whey · 8 g peanut butter · 50 g berries | 385 | 36/9/34 |
 
-The bowls cycle on a **three-week** loop against the **two-week** main rotation,
-so the pairing keeps shifting — six weeks before you see the same combination
-twice. The cottage cheese bowl is the leanest at 4 g fat; the overnight oats
-need five minutes the night before.
+Two bowls against the two-week main rotation means the pairing is **fixed**:
+rotation A weeks take the yoghurt bowl, rotation B weeks the overnight oats.
+Less variety than a drifting cycle, but it makes each shopping list exact —
+every list can name its bowl instead of hedging. The overnight oats need five
+minutes the night before; the yoghurt bowl needs ninety seconds in the morning.
 
 Batches are sized for alternating: 3 cooked breakfasts on Sunday, 4 on
 Wednesday. If you find you prefer the hash, cook 6 and 8 and scale the mince and
@@ -264,7 +264,6 @@ cooked chicken and mince. The ragu freezes best of the eight.
 ### Dairy & supplements
 - Greek yoghurt, 2% — **1 kg tub** (750 g breakfast bowls + 180 g tzatziki)
 - Whey isolate — 135 g needed
-- Optional: light cottage cheese 200 g, if you want that bowl instead
 
 ---
 
@@ -301,13 +300,14 @@ whey isolate 180 g
 
 **Produce:** sweet potato 350 g · red capsicum 250 g · carrot 3 · zucchini 2 ·
 celery 2 sticks · brown onion 300 g · limes 2 · coriander 1 bunch · garlic ·
-bananas 3 · berries 250 g · fruit 6 pieces
+bananas 3 · berries 150 g · fruit 6 pieces
 
 **Pantry:** couscous 300 g · basmati 250 g · pasta 250 g · black beans 2 tins ·
 chunky salsa 1 jar · passata 2 × 700 g · ras el hanout · smoked paprika ·
 fennel seed · rolled oats · olive oil spray
 
-**Dairy & supps:** Greek yoghurt 2% 800 g · whey isolate 135 g
+**Dairy & supps:** Greek yoghurt 2% 800 g (600 g for the bowls) · whey isolate
+150 g · peanut butter, small jar
 
 ### Cook 2 (Wednesday) — 24 cooked + 4 no-cook
 
@@ -316,15 +316,16 @@ chicken breast **650 g** (tikka) · beef mince 5% **520 g**
 
 **Produce:** chat potatoes 960 g · potatoes 520 g · broccoli 1.2 kg (3 heads) ·
 brown onion 400 g · cucumber 4 · tomatoes 6 · lemon 2 · dill 1 bunch ·
-thyme 1 small bunch · garlic · ginger · bananas 4 · berries 320 g · fruit 8
+thyme 1 small bunch · garlic · ginger · bananas 4 · berries 200 g · fruit 8
 
 **Pantry:** basmati 500 g bag · jasmine rice 300 g · light soy · oyster sauce ·
 sesame oil · tikka spice or garam masala · rolled oats
 
-**Dairy & supps:** Greek yoghurt 2% 1.5 kg · whey isolate 180 g
+**Dairy & supps:** Greek yoghurt 2% 1.5 kg · whey isolate 200 g · peanut
+butter, small jar
 
 ---
 
-The no-cook bowl changes week to week on its three-week cycle, so the dairy line
-shifts with it — check the Meals tab for which bowl the current week is on
-before you shop.
+Each rotation has one fixed bowl — A weeks yoghurt, B weeks overnight oats — so
+the dairy lines above are exact rather than approximate. The Meals tab shows the
+current week's bowl alongside the hash it alternates with.
