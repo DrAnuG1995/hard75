@@ -317,7 +317,66 @@ console.log('\nRecipes and schedule');
         gap.length === 0, `missing: ${gap.join(', ')}`);
     }
   }
+}
 
+/* ---------- batch quantities ---------- */
+console.log('\nBatch quantities');
+{
+  const src = readFileSync(join(ROOT, 'index.html'), 'utf8');
+  const body = src.slice(src.indexOf('<script>') + 8, src.lastIndexOf('</script>'));
+  const data = body.slice(0, body.indexOf('var $view = document.getElementById')) +
+    '\nreturn { ROTATIONS, SHAKE, NOCOOK, parseIng, servingsFor, qty };})();';
+  const { ROTATIONS, SHAKE, NOCOOK, parseIng, servingsFor, qty } =
+    new Function('return ' + data.trim())();
+
+  // the derived per-meal counts must add up to the cook's own stated total
+  for (const key of ['A1', 'A2', 'B1', 'B2']) {
+    const cook = ROTATIONS[key[0]][key[1] === '1' ? 'cook1' : 'cook2'];
+    const sum = cook.meals.reduce((a, m) => a + servingsFor(cook, m), 0);
+    check(`${key}: derived servings add up to ${cook.servings}`, sum === cook.servings, `got ${sum}`);
+  }
+
+  // every ingredient must either carry a quantity or be a spice/aromatic
+  // spices and aromatics are the only things allowed to go unweighed
+  const UNQUANTIFIED = /^(cumin|lime|soy|smoked paprika|cucumber|yoghurt-tikka|gochujang|passata|thyme|ras el hanout)/i;
+  let unreadable = [];
+  for (const rid of ['A', 'B']) {
+    for (const ck of ['cook1', 'cook2']) {
+      for (const m of ROTATIONS[rid][ck].meals) {
+        for (const i of parseIng(m.ing)) {
+          if (!i.q && !UNQUANTIFIED.test(i.n)) unreadable.push(`${m.name}: "${i.n}"`);
+        }
+      }
+    }
+  }
+  check('every ingredient either parses to a quantity or is a known aromatic',
+    unreadable.length === 0, unreadable.join(' | '));
+
+  // spot-check the arithmetic against the shopping list the user actually buys from
+  const a1 = ROTATIONS.A.cook1;
+  const totals = {};
+  for (const m of a1.meals) {
+    for (const i of parseIng(m.ing)) {
+      if (i.q) totals[i.n] = (totals[i.n] || 0) + i.q * servingsFor(a1, m);
+    }
+  }
+  for (const [name, want] of [
+    ['chicken thigh', 450],       // 3 x 150 g — the case that prompted this
+    ['chicken breast', 900],      // 6 x 150 g
+    ['beef mince (5%)', 390],     // 3 x 130 g
+    ['lean rump', 780],           // 6 x 130 g
+    ['broccoli', 900],            // 6 x 150 g
+    ['sweet potato', 330]         // 3 x 110 g
+  ]) {
+    check(`A1 totals ${want} g of ${name}`, totals[name] === want, `got ${totals[name]}`);
+  }
+
+  check('grams roll over to kg past 1000', qty(1800, 'g') === '1.8 kg' && qty(900, 'g') === '900 g',
+    `${qty(1800, 'g')} / ${qty(900, 'g')}`);
+}
+
+console.log('\nRecipes and schedule (continued)');
+{
   // the cook card must carry a timed schedule, in clock time
   for (const [date, label, first, last] of [
     ['2026-08-23', 'Sunday cook', '16:00', '17:10'],

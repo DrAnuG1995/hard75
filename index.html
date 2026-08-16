@@ -306,6 +306,18 @@
   }
   .step-d { flex: 1; font-size: 13px; }
 
+  .batch { margin-top: 6px; }
+  .batch-r { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; font-size: 13px; }
+  .batch-n { flex: 1; min-width: 0; }
+  .batch-q {
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-size: 13px; font-weight: 600; white-space: nowrap;
+  }
+  .batch-x {
+    font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
+    white-space: nowrap; flex: 0 0 76px; text-align: right;
+  }
+
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
@@ -392,9 +404,9 @@
         day: "Wednesday", covers: "Thu–Sun", servings: 24,
         meals: [
           meal("Breakfast", "Paprika chicken & potato hash", 385, 37, 10, 34,
-            "150 g chicken breast · 130 g potato · 70 g capsicum · onion · smoked paprika, oregano", true, true),
+            "150 g chicken breast · 130 g potato · 70 g capsicum · 50 g onion · smoked paprika, oregano", true, true),
           meal("Lunch", "Chicken shawarma wrap", 395, 40, 11, 33,
-            "140 g chicken thigh · 1 high-protein wrap · 50 g yoghurt-garlic sauce · salad", true, true),
+            "140 g chicken thigh · 1 high-protein wrap · 50 g yoghurt-garlic sauce · 60 g salad", true, true),
           meal("Afternoon", "Chicken tikka & basmati", 395, 41, 9, 36,
             "160 g chicken breast · yoghurt-tikka marinade · 35 g basmati (dry) · cucumber salad", false, false),
           meal("Dinner", "Korean beef rice bowl", 400, 36, 11, 36,
@@ -410,7 +422,7 @@
           meal("Breakfast", "Smoky chicken & sweet potato hash", 385, 38, 10, 32,
             "150 g chicken breast · 110 g sweet potato · 80 g capsicum · smoked paprika, fennel", true, true),
           meal("Lunch", "Moroccan chicken & couscous", 390, 40, 8, 38,
-            "150 g chicken breast · 45 g couscous (dry) · roast carrot & zucchini · ras el hanout", true, true),
+            "150 g chicken breast · 45 g couscous (dry) · 80 g carrot · 80 g zucchini · ras el hanout", true, true),
           meal("Afternoon", "Chicken burrito bowl", 395, 42, 5, 41,
             "150 g chicken breast · 35 g basmati (dry) · 50 g black beans · 60 g salsa · lime, coriander", false, true),
           meal("Dinner", "Slow beef ragu with pasta", 400, 37, 11, 36,
@@ -421,7 +433,7 @@
         day: "Wednesday", covers: "Thu–Sun", servings: 24,
         meals: [
           meal("Breakfast", "Beef & potato hash", 390, 34, 12, 34,
-            "130 g beef mince (5%) · 130 g potato · onion · thyme, black pepper", true, true),
+            "130 g beef mince (5%) · 130 g potato · 50 g onion · thyme, black pepper", true, true),
           meal("Lunch", "Chicken souvlaki bowl", 390, 38, 12, 28,
             "150 g chicken thigh · 120 g chat potato · cucumber & tomato · 60 g Greek yoghurt tzatziki", true, true),
           meal("Afternoon", "Chicken tikka & basmati", 395, 41, 9, 36,
@@ -591,6 +603,51 @@
     ]
   };
 
+  /* The ingredient strings are per serving, which is what you want when you're
+     eating but useless when you're standing at the scales with a batch to make.
+     Split on the separator and pull off a leading quantity where there is one;
+     spices and aromatics have none and stay as a footnote. */
+  function parseIng(s) {
+    return String(s).split("·").map(function (part) {
+      var t = part.trim();
+      var m = /^(\d+(?:\.\d+)?)\s*(g|ml)?\s+(.+)$/.exec(t);
+      return m ? { q: +m[1], u: m[2] || "", n: m[3] } : { n: t };
+    });
+  }
+
+  /* Derived, not stored, so it can't disagree with the cook's total. Cook 1
+     covers Mon–Wed and cook 2 Thu–Sun; anything your partner shares is doubled.
+     Breakfast is the exception — half of them are the no-cook bowl. */
+  function servingsFor(cook, m) {
+    var days = cook.day === "Sunday" ? 3 : 4;
+    if (m.slot === "Breakfast") return days;
+    return m.both ? days * 2 : days;
+  }
+
+  function qty(q, u) {
+    if (u === "g" && q >= 1000) {
+      return String(Math.round(q / 10) / 100).replace(/(\.\d)0$/, "$1") + " kg";
+    }
+    return (Math.round(q * 10) / 10) + (u ? " " + u : "");
+  }
+
+  function batchHtml(cook, m) {
+    var n = servingsFor(cook, m);
+    var items = parseIng(m.ing);
+    var weighed = items.filter(function (i) { return i.q; });
+    var rest = items.filter(function (i) { return !i.q; }).map(function (i) { return i.n; });
+
+    return '<div class="batch">' +
+      weighed.map(function (i) {
+        return '<div class="batch-r"><span class="batch-n">' + esc(i.n) + '</span>' +
+          '<span class="batch-q">' + esc(qty(i.q * n, i.u)) + '</span>' +
+          '<span class="batch-x">' + n + ' &times; ' + esc(qty(i.q, i.u)) + '</span></div>';
+      }).join("") +
+      (rest.length ? '<div class="batch-r"><span class="batch-n muted">plus ' +
+        esc(rest.join(" · ")) + '</span></div>' : "") +
+      '</div>';
+  }
+
   function clockAt(startHHMM, mins) {
     var p = startHHMM.split(":");
     var t = (+p[0]) * 60 + (+p[1]) + mins;
@@ -604,7 +661,7 @@
       groups: [
         { g: "Butcher", items: ["Beef mince, 5% fat — 400 g", "Chicken breast — 900 g", "Chicken thigh fillets, skinless — 450 g", "Beef rump, lean & trimmed — 800 g"] },
         { g: "Produce", items: ["Sweet potato — 350 g (1 large)", "Red capsicum — 250 g (2 medium)", "Brown onion — 200 g (2 small)", "Broccoli — 900 g (2 large heads)", "Chat potatoes — 400 g", "Lebanese cucumber — 2", "Tomatoes — 3", "Limes — 2 · Lemon — 1", "Coriander — 1 bunch · Dill — 1 small bunch", "Garlic — 1 bulb · Ginger — 1 thumb", "Bananas — 3 (shakes)", "Berries — 250 g (fresh or frozen)", "Fruit for daily extras — 6 pieces"] },
-        { g: "Pantry", items: ["Long-grain rice, basmati or jasmine — 1 × 500 g bag", "Rolled oats — 1 bag (225 g used)", "Black beans — 2 × 400 g tins", "Chunky salsa — 1 × 400 g jar", "Light soy sauce · Oyster sauce · Sesame oil", "Olive oil spray", "Smoked paprika, cumin, dried oregano, chilli flakes"] },
+        { g: "Pantry", items: ["Long-grain rice, basmati or jasmine — 1 × 500 g bag", "Rolled oats — 1 bag (225 g used)", "Black beans — 2 × 400 g tins", "Chunky salsa — 1 × 400 g jar", "Light soy sauce · Oyster sauce · Sesame oil", "Olive oil spray", "Smoked paprika, cumin, chipotle, dried oregano"] },
         { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 1 kg tub (750 g bowls + 180 g tzatziki)", "Whey isolate — 135 g needed", "Breakfast bowl this week: Greek yoghurt, oats & berries"] }
       ]
     },
@@ -612,8 +669,8 @@
       title: "Rotation A · Cook 2 · Wednesday", servings: 24, nocook: 4,
       groups: [
         { g: "Butcher", items: ["Chicken breast — 1.24 kg (hash + tikka)", "Chicken thigh fillets — 1.15 kg", "Beef mince, 5% fat — 1.05 kg"] },
-        { g: "Produce", items: ["Potatoes — 550 g", "Red capsicum — 280 g", "Brown onion — 300 g", "Cucumber — 4", "Spring onion — 1 bunch", "Garlic, ginger", "Bananas — 4", "Berries — 320 g", "Fruit for daily extras — 8 pieces"] },
-        { g: "Pantry", items: ["High-protein wraps — 8", "Basmati rice — 500 g bag", "Gochujang", "Sesame seeds", "Rolled oats", "Tikka spice / garam masala", "Smoked paprika, oregano"] },
+        { g: "Produce", items: ["Potatoes — 550 g", "Red capsicum — 280 g", "Brown onion — 300 g", "Cucumber — 4", "Spring onion — 1 bunch", "Lemons — 2", "Garlic, ginger", "Bananas — 4", "Berries — 320 g", "Fruit for daily extras — 8 pieces"] },
+        { g: "Pantry", items: ["High-protein wraps — 8", "Basmati rice — 500 g bag", "Gochujang", "Light soy sauce · Sesame oil", "Sesame seeds", "Rolled oats", "Tikka spice / garam masala", "Smoked paprika, oregano, cumin, ground coriander"] },
         { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 1.6 kg (breakfast bowls, tikka marinade, shawarma sauce)", "Whey isolate — 180 g", "Breakfast bowl this week: Greek yoghurt, oats & berries"] }
       ]
     },
@@ -622,7 +679,7 @@
       groups: [
         { g: "Butcher", items: ["Chicken breast — 1.8 kg (hash + Moroccan + burrito)", "Beef chuck or rump — 850 g"] },
         { g: "Produce", items: ["Sweet potato — 350 g", "Red capsicum — 250 g", "Carrot — 3 · Zucchini — 2 · Celery — 2 sticks", "Brown onion — 300 g", "Limes — 2", "Coriander — 1 bunch", "Garlic — 1 bulb", "Bananas — 3", "Berries — 150 g", "Fruit for daily extras — 6 pieces"] },
-        { g: "Pantry", items: ["Couscous — 300 g", "Basmati rice — 250 g", "Pasta — 250 g", "Black beans — 2 × 400 g tins", "Chunky salsa — 1 × 400 g jar", "Passata — 2 × 700 g", "Ras el hanout, smoked paprika, fennel seed", "Rolled oats", "Olive oil spray"] },
+        { g: "Pantry", items: ["Couscous — 300 g", "Basmati rice — 250 g", "Pasta — 250 g", "Black beans — 2 × 400 g tins", "Chunky salsa — 1 × 400 g jar", "Passata — 2 × 700 g", "Ras el hanout, smoked paprika, fennel seed, bay leaves", "Rolled oats", "Olive oil spray"] },
         { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 800 g (600 g for the bowls)", "Whey isolate — 150 g", "Peanut butter — small jar (24 g used)", "Breakfast bowl this week: overnight oats, whey & peanut butter"] }
       ]
     },
@@ -631,7 +688,7 @@
       groups: [
         { g: "Butcher", items: ["Chicken breast — 650 g (tikka)", "Chicken thigh fillets — 1.2 kg", "Beef mince, 5% fat — 520 g", "Beef rump, lean & trimmed — 1.05 kg"] },
         { g: "Produce", items: ["Potatoes — 520 g", "Chat potatoes — 960 g", "Broccoli — 1.2 kg (3 heads)", "Brown onion — 400 g", "Cucumber — 4 · Tomatoes — 6", "Lemon — 2", "Dill — 1 bunch · Thyme — 1 small bunch", "Garlic, ginger", "Bananas — 4", "Berries — 200 g", "Fruit for daily extras — 8 pieces"] },
-        { g: "Pantry", items: ["Basmati rice — 500 g bag", "Jasmine rice — 300 g", "Light soy · Oyster sauce · Sesame oil", "Tikka spice / garam masala", "Rolled oats"] },
+        { g: "Pantry", items: ["Basmati rice — 500 g bag", "Jasmine rice — 300 g", "Light soy · Oyster sauce · Sesame oil", "Tikka spice / garam masala", "Dried oregano", "Rolled oats"] },
         { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 1.5 kg (bowls, tzatziki, tikka marinade)", "Whey isolate — 200 g", "Peanut butter — small jar (32 g used)", "Breakfast bowl this week: overnight oats, whey & peanut butter"] }
       ]
     }
@@ -1421,11 +1478,11 @@
 
           /* Each recipe with its method, so the phone on the counter is enough. */
           '<div>' + pc.meals.map(function (m) {
-            return '<div style="padding:8px 0;border-bottom:1px solid var(--line)">' +
+            return '<div style="padding:10px 0;border-bottom:1px solid var(--line)">' +
               '<div class="small" style="display:flex;justify-content:space-between;gap:10px">' +
                 '<b>' + esc(m.name) + '</b>' +
-                '<span class="muted">' + esc(m.slot) + '</span></div>' +
-              '<div class="ing">' + esc(m.ing) + '</div>' +
+                '<span class="muted">' + esc(m.slot) + ' &middot; makes ' + servingsFor(pc, m) + '</span></div>' +
+              batchHtml(pc, m) +
               methodHtml(m.name) +
             '</div>';
           }).join("") + '</div>' +

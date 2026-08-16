@@ -165,8 +165,8 @@ Broccoli in last, 2 min, lid on. Sauce at the end so it glazes rather than boils
 | Korean beef rice bowl | dinner | 8 | 400 | 36/11/36 |
 
 Per serving:
-- **Hash** — 150 g chicken breast · 130 g potato · 70 g capsicum · onion · smoked paprika, oregano.
-- **Shawarma** — 140 g chicken thigh · 1 high-protein wrap · 50 g yoghurt-garlic sauce · salad. Assemble the morning of, or the wrap goes soft.
+- **Hash** — 150 g chicken breast · 130 g potato · 70 g capsicum · 50 g onion · smoked paprika, oregano.
+- **Shawarma** — 140 g chicken thigh · 1 high-protein wrap · 50 g yoghurt-garlic sauce · 60 g salad. Assemble the morning of, or the wrap goes soft.
 - **Tikka** — 160 g chicken breast · yoghurt-tikka marinade · 35 g basmati (dry) · cucumber salad. Marinate Tuesday night; one oven tray.
 - **Korean beef** — 130 g beef mince (5%) · gochujang, soy, sesame · 35 g rice (dry) · cucumber, spring onion.
 
@@ -184,7 +184,7 @@ Per serving:
 | Slow beef ragu with pasta | dinner | 6 | 400 | 37/11/36 |
 
 - **Smoky hash** — 150 g chicken breast · 110 g sweet potato · 80 g capsicum · smoked paprika, fennel seed.
-- **Moroccan** — 150 g chicken breast · 45 g couscous (dry) · roast carrot & zucchini · ras el hanout. Cold-ready; couscous is 10 minutes off the boil.
+- **Moroccan** — 150 g chicken breast · 45 g couscous (dry) · 80 g carrot · 80 g zucchini · ras el hanout. Cold-ready; couscous is 10 minutes off the boil.
 - **Ragu** — 140 g lean chuck or rump · passata, carrot, celery · 40 g pasta (dry). 3 h at 150 °C, or 40 min in a pressure cooker. Start it first and ignore it.
 
 ### Cook 2 — Wednesday (24 cooked + 4 no-cook)
@@ -196,7 +196,7 @@ Per serving:
 | Chicken tikka & basmati | afternoon | 4 | 395 | 41/9/36 |
 | Beef & broccoli stir-fry | dinner | 8 | 400 | 35/10/37 |
 
-- **Beef & potato hash** — 130 g beef mince (5%) · 130 g potato · onion · thyme, black pepper.
+- **Beef & potato hash** — 130 g beef mince (5%) · 130 g potato · 50 g onion · thyme, black pepper.
 
 ---
 
