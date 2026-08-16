@@ -286,6 +286,26 @@
   dialog::backdrop { background: rgba(0,0,0,.55); }
   .dlg-b { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
 
+  /* ---- method + cook plan ---- */
+  details.method { margin-top: 7px; }
+  details.method > summary {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--accent); cursor: pointer; list-style: none; padding: 3px 0;
+  }
+  details.method > summary::-webkit-details-marker { display: none; }
+  details.method > summary::before { content: "+ "; }
+  details.method[open] > summary::before { content: "\2212 "; }
+  details.method ol { margin: 5px 0 0; padding-left: 18px; }
+  details.method li { font-size: 13px; color: var(--ink-2); margin-bottom: 5px; }
+
+  .step { display: flex; gap: 11px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .step:last-child { border-bottom: 0; }
+  .step-t {
+    flex: 0 0 44px; font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-size: 11.5px; color: var(--accent); padding-top: 1px;
+  }
+  .step-d { flex: 1; font-size: 13px; }
+
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
@@ -415,6 +435,169 @@
   };
 
   var ROT_ORDER = ["A", "B"];
+
+  /* Method, keyed by dish name. Four of the eight mains show up in both
+     rotations, so keying by name rather than nesting it in ROTATIONS keeps one
+     copy of each recipe instead of two that can drift apart. */
+  var METHOD = {
+    "Beef & sweet potato hash": [
+      "Dice the sweet potato 1.5 cm, toss in spray oil, cumin, chipotle and smoked paprika.",
+      "Roast at 200 °C for 25 min.",
+      "Brown the mince hard in a dry pan — no oil, 5% mince gives up enough.",
+      "Onion and capsicum in for the last 5 min, then fold the whole lot through the potato.",
+      "Divide into 3."
+    ],
+    "Paprika chicken & potato hash": [
+      "Dice the potato 1.5 cm, toss in spray oil, smoked paprika and oregano. Roast at 200 °C for 25–30 min.",
+      "Capsicum and onion onto the same tray for the last 10 min.",
+      "Bake the breast at 200 °C for 20 min, rest, then dice.",
+      "Fold everything together and divide into 4."
+    ],
+    "Smoky chicken & sweet potato hash": [
+      "Dice the sweet potato 1.5 cm, toss in spray oil, smoked paprika and crushed fennel seed.",
+      "Roast at 200 °C for 25 min, capsicum added for the last 10.",
+      "Bake the breast at 200 °C for 20 min, rest, dice, fold through.",
+      "Divide into 3."
+    ],
+    "Beef & potato hash": [
+      "Dice the potato 1.5 cm, toss in spray oil, thyme and plenty of black pepper. Roast at 200 °C for 25–30 min.",
+      "Brown the mince hard in a dry pan with the onion.",
+      "Fold through the potato and divide into 4."
+    ],
+    "Chicken burrito bowl": [
+      "Bake the breast at 200 °C for 20 min. Rest it, then slice.",
+      "Layer cold: rice, beans, chicken, salsa.",
+      "Lime and coriander on top at serving, not now.",
+      "This is the meal carrying the day's macros — weigh it properly."
+    ],
+    "Chicken souvlaki bowl": [
+      "Marinate the thigh in lemon, oregano and garlic — 20 min is enough, overnight is better.",
+      "Roast with the halved chat potatoes at 200 °C for 25–30 min.",
+      "Tzatziki: Greek yoghurt, crushed garlic, lemon, chopped dill. Grate the cucumber and squeeze it dry first or it goes watery.",
+      "Salad and tzatziki in a separate compartment — this one is eaten cold."
+    ],
+    "Beef & broccoli stir-fry": [
+      "Slice the rump thin against the grain.",
+      "Sear in batches. Crowding the pan steams it and you lose the crust.",
+      "Broccoli in last, 2 min, lid on.",
+      "Sauce at the end so it glazes rather than boils.",
+      "Rice kept separate until serving."
+    ],
+    "Chicken shawarma wrap": [
+      "Marinate the thigh in garlic, cumin, ground coriander, paprika and lemon.",
+      "Roast at 220 °C for 25 min, rest 5 min, then slice.",
+      "Sauce: yoghurt, crushed garlic, lemon, a pinch of salt.",
+      "Store meat, sauce, salad and wraps apart. Assemble the morning of, or the wrap goes soft."
+    ],
+    "Chicken tikka & basmati": [
+      "Marinate the night before: yoghurt, tikka spice or garam masala, garlic, ginger, lemon.",
+      "Shake off the excess and spread on a rack set over a tray — the rack matters, on a flat tray it stews instead of charring.",
+      "220 °C for 20–25 min, until the edges catch. Rest, then slice.",
+      "Basmati and the cucumber salad kept separate."
+    ],
+    "Korean beef rice bowl": [
+      "Brown the mince hard in a dry pan.",
+      "Gochujang, soy, sesame oil, garlic and ginger in. 3–4 min until it's glossy and coating.",
+      "Rice separate.",
+      "Cucumber and spring onion go on raw at serving — they're the whole point of the dish."
+    ],
+    "Moroccan chicken & couscous": [
+      "Toss carrot and zucchini in spray oil and ras el hanout, roast at 200 °C for 25 min.",
+      "Rub the breast with ras el hanout, bake at 200 °C for 20 min, rest, slice.",
+      "Couscous: equal weight boiling water, lid on, 10 min off the heat, then fork it through.",
+      "Layer cold — this one is built for a cooler bag."
+    ],
+    "Slow beef ragu with pasta": [
+      "Brown the chuck hard in batches. This is where the flavour comes from — don't rush it.",
+      "Soffritto of carrot, celery and onion until soft.",
+      "Passata and a bay leaf, beef back in. 40 min in a pressure cooker, or 3 h at 150 °C with the lid on.",
+      "Shred it. If it's loose, reduce uncovered for a few minutes.",
+      "Cook the pasta separately and keep it apart from the sauce, or it drinks the lot overnight.",
+      "Freezes better than anything else on the plan."
+    ],
+    "Greek yoghurt, oats & berries": ["Stir it together. Ninety seconds, no heat."],
+    "Cottage cheese & banana bowl": ["Stir it together. Ninety seconds, no heat."],
+    "Overnight oats, whey & peanut butter": [
+      "Stir it together the night before and leave it in the fridge.",
+      "This is the one bowl that needs thinking about in advance."
+    ],
+    "Whey, oats & banana shake": [
+      "Blend everything with ice.",
+      "Blitz the oats alone first if your blender is weak."
+    ]
+  };
+
+  /* When to do what, as minutes from the moment you start. Rendered against the
+     cook's start time so it reads as a clock, not arithmetic. */
+  var COOK_AT = { Sunday: "16:00", Wednesday: "18:00" };
+
+  var PLAN = {
+    "A1": [
+      [0, "Oven to 200 °C. Thigh into the souvlaki marinade — lemon, oregano, garlic — while it heats."],
+      [5, "Sweet potato and chat potatoes on one tray, spray oil and spice. In, 25–30 min."],
+      [5, "Rice on: 420 g dry in one pot, split after — half to the burrito bowls, half to the stir-fry."],
+      [10, "Chicken breast on the second shelf, 20 min."],
+      [15, "Beef mince hard in a dry pan. Onion and capsicum in for the last 5."],
+      [30, "Trays out, rest the breast. Marinated thigh in at 200 °C for 25–30 min."],
+      [35, "Fold the mince through the sweet potato. Portion the 3 hash breakfasts."],
+      [40, "Slice the breast and build the 6 burrito bowls cold."],
+      [55, "Stir-fry last so the broccoli keeps its bite."],
+      [65, "Thigh out. Tzatziki. Salad in its own compartment."],
+      [70, "Portion 18."]
+    ],
+    "A2": [
+      [0, "Oven to 200 °C. Tikka breast out of the fridge — it's been in the yoghurt since last night."],
+      [5, "Potatoes diced on a tray with smoked paprika and oregano. In, 25–30 min."],
+      [5, "Rice on: 420 g dry — a third basmati for the tikka, the rest for the Korean bowls."],
+      [10, "Thigh into the shawarma marinade: garlic, cumin, coriander, paprika, lemon."],
+      [15, "Hash chicken breast in on the second shelf, 20 min."],
+      [25, "Capsicum and onion onto the potato tray for the last 10."],
+      [35, "Everything out. Oven up to 220 °C."],
+      [40, "Tikka on a rack over a tray, 20–25 min. Shawarma thigh in alongside."],
+      [45, "Beef mince hard in a dry pan, then gochujang, soy, sesame, garlic, ginger — 3–4 min."],
+      [55, "Dice the hash breast, fold it through, portion 4."],
+      [70, "Tikka and thigh out. Rest 5, then slice both."],
+      [80, "Yoghurt-garlic sauce. Cucumber salad. Wraps, meat, sauce and salad all stored apart."],
+      [90, "Portion 24."],
+      [100, "Sunday's portions into the freezer tonight — four days is past the window for cooked chicken."]
+    ],
+    "B1": [
+      [0, "Ragu first, then walk away: brown the chuck in batches, soffritto, passata and bay, beef back in. 40 min at pressure."],
+      [5, "Oven to 200 °C. If the ragu is going in the oven instead you've only got one temperature — run it after everything else and add three hours."],
+      [10, "Sweet potato with paprika and fennel on one tray; carrot and zucchini with ras el hanout on another. In, 25 min."],
+      [15, "Couscous: equal weight boiling water, lid on, 10 min, fork through."],
+      [20, "Chicken breast across two trays, 20–25 min. Rub the Moroccan portion with ras el hanout first."],
+      [30, "Capsicum onto the sweet potato tray for the last 10."],
+      [40, "Rice on for the burrito bowls."],
+      [45, "Everything out, rest the chicken."],
+      [50, "Ragu out. Shred it, and reduce it uncovered if it's loose."],
+      [55, "Pasta on. Keep it apart from the sauce."],
+      [60, "Slice and dice. Build 3 hash, 6 Moroccan, 3 burrito, 6 ragu."],
+      [70, "Portion 18."]
+    ],
+    "B2": [
+      [0, "Oven to 200 °C. Tikka breast out of the fridge, marinated overnight."],
+      [5, "Hash potatoes and souvlaki chat potatoes on trays, thyme and pepper. In, 25–30 min."],
+      [5, "Rice on: 420 g — basmati for the tikka, jasmine for the stir-fry."],
+      [10, "Thigh into lemon, oregano and garlic for the souvlaki."],
+      [20, "Thigh in on its own tray, 25–30 min."],
+      [25, "Beef mince hard in a dry pan with the onion."],
+      [35, "Potato trays out. Oven up to 220 °C."],
+      [40, "Tikka on a rack, 20–25 min."],
+      [45, "Fold the mince through the potato, portion the 4 hash breakfasts."],
+      [60, "Tikka out, rest, slice."],
+      [70, "Stir-fry — the big one. Over a kilo of rump won't fit in one pan, so three or four batches. Broccoli 2 min, lid on, sauce at the end."],
+      [90, "Tzatziki and cucumber salad for the souvlaki bowls."],
+      [95, "Portion 24."],
+      [100, "Sunday's portions into the freezer tonight."]
+    ]
+  };
+
+  function clockAt(startHHMM, mins) {
+    var p = startHHMM.split(":");
+    var t = (+p[0]) * 60 + (+p[1]) + mins;
+    return pad(Math.floor(t / 60) % 24) + ":" + pad(t % 60);
+  }
 
   /* Shopping lists, keyed rotation+cook. Quantities cover the servings shown. */
   var SHOPPING = {
@@ -771,10 +954,12 @@
     for (i = 0; i < 7; i++) { if (parseISO(addDays(S.startDate, -i)).getDay() === 0) { firstSun = addDays(S.startDate, -i); break; } }
     for (i = 0; i < 7; i++) { if (parseISO(addDays(S.startDate, i)).getDay() === 3) { firstWed = addDays(S.startDate, i); break; } }
 
-    ev(uidBase + "-cook1@h75", firstSun.replace(/-/g, "") + "T160000", "FREQ=WEEKLY;BYDAY=SU;COUNT=11",
+    ev(uidBase + "-cook1@h75", firstSun.replace(/-/g, "") + "T" + COOK_AT.Sunday.replace(":", "") + "00",
+       "FREQ=WEEKLY;BYDAY=SU;COUNT=11",
        "75 Hard — Sunday cook (Mon–Wed)",
        "18 cooked servings, plus 3 no-cook breakfasts. Shopping list is in the app under Meals.", true);
-    ev(uidBase + "-cook2@h75", firstWed.replace(/-/g, "") + "T180000", "FREQ=WEEKLY;BYDAY=WE;COUNT=11",
+    ev(uidBase + "-cook2@h75", firstWed.replace(/-/g, "") + "T" + COOK_AT.Wednesday.replace(":", "") + "00",
+       "FREQ=WEEKLY;BYDAY=WE;COUNT=11",
        "75 Hard — Wednesday cook (Thu–Sun)",
        "24 cooked servings, plus 4 no-cook breakfasts. Shopping list is in the app under Meals.", true);
 
@@ -1135,6 +1320,14 @@
 
   /* ---------- meals ---------- */
 
+  function methodHtml(name) {
+    var st = METHOD[name];
+    if (!st) return "";
+    return '<details class="method"><summary>Method</summary><ol>' +
+      st.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join("") +
+      '</ol></details>';
+  }
+
   function viewMeals() {
     var ds = today();
     if (dayNum(ds) < 1) ds = S.startDate;
@@ -1175,6 +1368,7 @@
             (m.cold ? '<span class="tag">Cold-ready</span>' : "") +
             (m.cook ? "" : '<span class="tag">No cooking</span>') +
           '</div>' +
+          methodHtml(m.name) +
         '</div></div>';
     }).join("");
 
@@ -1211,19 +1405,42 @@
     var prepHtml = "";
     if (prep) {
       var pc = prep.plan.cook, pr = prep.plan.rot;
+      var planKey = pr.id + (pc === pr.cook1 ? "1" : "2");
+      var steps = PLAN[planKey] || [];
+      var start = COOK_AT[pc.day] || "16:00";
+      var runs = steps.length ? steps[steps.length - 1][0] : 0;
+
       prepHtml = '<div class="card" style="border-color:var(--accent)">' +
         '<div class="card-h"><span class="eyebrow">Cooking ' + esc(prep.when) + '</span>' +
           '<span class="small num">' + pc.servings + ' servings</span></div>' +
         '<div class="card-b">' +
           '<div class="small"><b>' + esc(pc.day) + '</b> cook · rotation ' + esc(pr.id) +
-          ' — covers <b>' + esc(pc.covers) + '</b>. ' +
-          (pc.day === "Sunday" ? "~70 min." : "~100 min.") + '</div>' +
+          ' — covers <b>' + esc(pc.covers) + '</b>. About ' + runs + ' min start to finish.</div>' +
+
+          /* Each recipe with its method, so the phone on the counter is enough. */
           '<div>' + pc.meals.map(function (m) {
-            return '<div class="small" style="display:flex;justify-content:space-between;gap:10px;' +
-              'padding:4px 0;border-bottom:1px solid var(--line)">' +
-              '<span>' + esc(m.name) + '</span>' +
-              '<span class="muted">' + esc(m.slot) + '</span></div>';
+            return '<div style="padding:8px 0;border-bottom:1px solid var(--line)">' +
+              '<div class="small" style="display:flex;justify-content:space-between;gap:10px">' +
+                '<b>' + esc(m.name) + '</b>' +
+                '<span class="muted">' + esc(m.slot) + '</span></div>' +
+              '<div class="ing">' + esc(m.ing) + '</div>' +
+              methodHtml(m.name) +
+            '</div>';
           }).join("") + '</div>' +
+
+          (steps.length
+            ? '<details class="method" open><summary>Order of play</summary>' +
+              '<div style="margin-top:6px">' +
+              steps.map(function (s) {
+                return '<div class="step"><div class="step-t">' + clockAt(start, s[0]) + '</div>' +
+                  '<div class="step-d">' + esc(s[1]) + '</div></div>';
+              }).join("") +
+              '</div>' +
+              '<div class="small muted" style="margin-top:8px">Times assume you start at ' +
+              esc(start) + '. Shift them all by however late you actually begin.</div>' +
+              '</details>'
+            : "") +
+
           '<div class="small muted">The shopping list below is this cook\'s, not the one ' +
           'you\'re eating out of today.</div>' +
         '</div></div>';

@@ -248,6 +248,56 @@ console.log('\nSelf-containment');
   await ctx.close();
 }
 
+/* ---------- recipes and the cook schedule ---------- */
+console.log('\nRecipes and schedule');
+{
+  // every dish on every rotation must carry a method, not just tonight's four
+  /* A1, A2, B1, B2 — plus week 3, because the no-cook bowls cycle every three
+     weeks against a two-week rotation and the third bowl never shows up inside
+     the first two. Six dates is the smallest set that reaches all 16 dishes. */
+  const seen = new Set();
+  for (const date of ['2026-08-17', '2026-08-20', '2026-08-24', '2026-08-27',
+                      '2026-08-31', '2026-09-03']) {
+    const { ctx, page } = await fresh(browser, { settings: { dateOverride: date } });
+    await page.click('[data-nav="meals"]');
+    const meals = await page.locator('.meal').count();
+    const methods = await page.locator('.meal details.method').count();
+    check(`${date}: every meal has a method (${methods}/${meals})`, methods === meals && meals > 0);
+    for (const n of await page.locator('.meal .meal-b b').allTextContents()) seen.add(n);
+    await ctx.close();
+  }
+  check('all 16 dishes across both rotations are covered', seen.size === 16, `${seen.size} distinct dishes`);
+}
+{
+  // the cook card must carry a timed schedule, in clock time
+  for (const [date, label, first, last] of [
+    ['2026-08-23', 'Sunday cook', '16:00', '17:10'],
+    ['2026-08-19', 'Wednesday cook', '18:00', '19:40']
+  ]) {
+    const { ctx, page } = await fresh(browser, { settings: { dateOverride: date } });
+    await page.click('[data-nav="meals"]');
+    const times = await page.locator('.step-t').allTextContents();
+    check(`${label}: schedule starts at ${first} and ends at ${last}`,
+      times[0] === first && times[times.length - 1] === last,
+      `${times[0]} → ${times[times.length - 1]}`);
+    check(`${label}: every recipe in the card has its method`,
+      await page.locator('.card details.method').count() >= 4);
+    await ctx.close();
+  }
+}
+{
+  // the .ics cook times must come from the same constants the schedule uses
+  const { ctx, page } = await fresh(browser);
+  await page.click('[data-nav="setup"]');
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-act="ics"]')]);
+  const ics = readFileSync(await dl.path(), 'utf8');
+  check('calendar cook times match the in-app schedule',
+    /DTSTART:\d{8}T160000\r?\n?.*\r?\n?RRULE:FREQ=WEEKLY;BYDAY=SU/.test(ics.replace(/\r\n /g, '')) ||
+    ics.includes('T160000'), 'Sunday 16:00 missing from the .ics');
+  check('Wednesday cook still at 18:00', ics.includes('T180000'));
+  await ctx.close();
+}
+
 /* ---------- regressions ---------- */
 console.log('\nRegressions');
 {
