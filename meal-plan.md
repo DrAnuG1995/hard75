@@ -283,7 +283,7 @@ fruit for daily extras 8 pieces
 
 ### Pantry
 High-protein wraps ×8 · basmati rice 500 g bag · gochujang · light soy ·
-sesame oil · sesame seeds · rolled oats · tikka spice or garam masala ·
+sesame oil · sesame seeds · honey · rolled oats · tikka spice or garam masala ·
 smoked paprika, oregano, cumin, ground coriander
 
 ### Dairy & supplements
@@ -300,12 +300,12 @@ whey isolate 180 g
 450 g) · beef chuck or rump **850 g**
 
 **Produce:** sweet potato 350 g · red capsicum 250 g · carrot 3 · zucchini 2 ·
-celery 2 sticks · brown onion 300 g · limes 2 · coriander 1 bunch · garlic ·
+celery 2 sticks · brown onion 300 g · limes 2 · lemon 1 · coriander 1 bunch · garlic ·
 bananas 3 · berries 150 g · fruit 6 pieces
 
 **Pantry:** couscous 300 g · basmati 250 g · pasta 250 g · black beans 2 tins ·
 chunky salsa 1 jar · passata 2 × 700 g · ras el hanout · smoked paprika ·
-fennel seed · bay leaves · rolled oats · olive oil spray
+fennel seed · bay leaves · cumin · dried oregano · rolled oats · olive oil spray
 
 **Dairy & supps:** Greek yoghurt 2% 800 g (600 g for the bowls) · whey isolate
 150 g · peanut butter, small jar

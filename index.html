@@ -306,6 +306,22 @@
   }
   .step-d { flex: 1; font-size: 13px; }
 
+  /* the schedule doubles as a checklist you work down while cooking */
+  button.step {
+    width: 100%; text-align: left; background: none; color: inherit; font: inherit;
+    border: 0; border-bottom: 1px solid var(--line); cursor: pointer; align-items: flex-start;
+  }
+  button.step:last-child { border-bottom: 0; }
+  .step-b {
+    flex: 0 0 18px; height: 18px; margin-top: 1px;
+    border: 1.5px solid var(--ink-3); border-radius: 2px;
+    display: grid; place-items: center;
+    font-family: var(--mono); font-size: 11px; line-height: 1; color: transparent;
+  }
+  button.step[data-on="1"] .step-b { background: var(--done); border-color: var(--done); color: #fff; }
+  button.step[data-on="1"] .step-t { color: var(--ink-3); }
+  button.step[data-on="1"] .step-d { color: var(--ink-3); text-decoration: line-through; }
+
   .batch { margin-top: 6px; }
   .batch-r { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; font-size: 13px; }
   .batch-n { flex: 1; min-width: 0; }
@@ -452,88 +468,110 @@
      copy of each recipe instead of two that can drift apart. */
   var METHOD = {
     "Beef & sweet potato hash": [
-      "Dice the sweet potato 1.5 cm, toss in spray oil, cumin, chipotle and smoked paprika.",
-      "Roast at 200 °C for 25 min.",
-      "Brown the mince hard in a dry pan — no oil, 5% mince gives up enough.",
-      "Onion and capsicum in for the last 5 min, then fold the whole lot through the potato.",
-      "Divide into 3."
+      "Oven to 200 \u00b0C.",
+      "Dice the sweet potato 1.5 cm. Per serving: 3 g olive oil (a two-second spray), \u00bd tsp ground cumin, \u00bc tsp chipotle powder, \u00bd tsp smoked paprika, a good pinch of salt.",
+      "Roast 25 min, turning once at 15.",
+      "Brown the mince hard in a dry pan, 6\u20138 min, breaking it up as you go. No oil \u2014 5% mince gives up enough.",
+      "Onion and capsicum in for the last 5 min, until the onion turns translucent.",
+      "Fold the roasted potato through. Black pepper. Divide into 3."
     ],
     "Paprika chicken & potato hash": [
-      "Dice the potato 1.5 cm, toss in spray oil, smoked paprika and oregano. Roast at 200 °C for 25–30 min.",
-      "Capsicum and onion onto the same tray for the last 10 min.",
-      "Bake the breast at 200 °C for 20 min, rest, then dice.",
+      "Oven to 200 \u00b0C.",
+      "Dice the potato 1.5 cm. Per serving: 3 g olive oil, \u00be tsp smoked paprika, \u00bd tsp dried oregano, a pinch of salt.",
+      "Roast 25\u201330 min. Capsicum and onion onto the same tray for the last 10.",
+      "Season the breast with salt, pepper and a pinch of paprika. Bake at 200 \u00b0C for 20 min, rest 5 min, then dice 1.5 cm.",
       "Fold everything together and divide into 4."
     ],
     "Smoky chicken & sweet potato hash": [
-      "Dice the sweet potato 1.5 cm, toss in spray oil, smoked paprika and crushed fennel seed.",
-      "Roast at 200 °C for 25 min, capsicum added for the last 10.",
-      "Bake the breast at 200 °C for 20 min, rest, dice, fold through.",
-      "Divide into 3."
+      "Oven to 200 \u00b0C.",
+      "Dice the sweet potato 1.5 cm. Per serving: 3 g olive oil, \u00be tsp smoked paprika, \u00bc tsp fennel seeds lightly crushed, a pinch of salt.",
+      "Roast 25 min, capsicum onto the tray for the last 10.",
+      "Bake the breast at 200 \u00b0C for 20 min, rest 5 min, dice.",
+      "Fold through and divide into 3."
     ],
     "Beef & potato hash": [
-      "Dice the potato 1.5 cm, toss in spray oil, thyme and plenty of black pepper. Roast at 200 °C for 25–30 min.",
-      "Brown the mince hard in a dry pan with the onion.",
-      "Fold through the potato and divide into 4."
+      "Oven to 200 \u00b0C.",
+      "Dice the potato 1.5 cm. Per serving: 3 g olive oil, \u00bd tsp dried thyme, \u00bc tsp cracked black pepper, a pinch of salt.",
+      "Roast 25\u201330 min.",
+      "Brown the mince hard in a dry pan, 6\u20138 min. Onion in for the last 5.",
+      "Fold through and divide into 4."
     ],
     "Chicken burrito bowl": [
-      "Bake the breast at 200 °C for 20 min. Rest it, then slice.",
+      "Season the breast, per serving: \u00bd tsp ground cumin, \u00bc tsp smoked paprika, 2 g olive oil, a pinch of salt.",
+      "Bake at 200 \u00b0C for 20 min. Rest 5 min \u2014 slicing it hot loses the juice \u2014 then slice 1 cm.",
+      "Rice: 35 g dry per serving with 70 ml water, 10 min at a bare simmer with the lid on, then 10 min off the heat without lifting it.",
+      "Drain and rinse the beans until the water runs clear.",
       "Layer cold: rice, beans, chicken, salsa.",
-      "Lime and coriander on top at serving, not now.",
-      "This is the meal carrying the day's macros — weigh it properly."
+      "At the table, not now: juice of \u00bc lime (about 5 ml) and 3 g chopped coriander per serving."
     ],
     "Chicken souvlaki bowl": [
-      "Marinate the thigh in lemon, oregano and garlic — 20 min is enough, overnight is better.",
-      "Roast with the halved chat potatoes at 200 °C for 25–30 min.",
-      "Tzatziki: Greek yoghurt, crushed garlic, lemon, chopped dill. Grate the cucumber and squeeze it dry first or it goes watery.",
-      "Salad and tzatziki in a separate compartment — this one is eaten cold."
+      "Marinade, per serving: 1 crushed garlic clove, 10 ml lemon juice (about a quarter of a lemon), 1 tsp dried oregano, 3 g olive oil, a pinch of salt. Twenty minutes will do; overnight is better.",
+      "Halve the chat potatoes and toss with 3 g olive oil per serving and salt.",
+      "Roast the thigh and potatoes together at 200 \u00b0C for 25\u201330 min, until the thigh reaches 75 \u00b0C.",
+      "Tzatziki \u2014 makes about 360 g, enough for 6 servings: 300 g Greek yoghurt, 100 g cucumber coarsely grated and wrung out in a tea towel, 1 crushed garlic clove, juice of half a lemon (about 15 ml), 2 tbsp chopped dill, \u00bc tsp salt. Halve it for a 3-serving batch.",
+      "Salad, per serving: 60 g cucumber and 60 g tomato, diced.",
+      "Salad and tzatziki in their own compartment \u2014 this one is eaten cold."
     ],
     "Beef & broccoli stir-fry": [
-      "Slice the rump thin against the grain.",
-      "Sear in batches. Crowding the pan steams it and you lose the crust.",
-      "Broccoli in last, 2 min, lid on.",
-      "Sauce at the end so it glazes rather than boils.",
+      "Slice the rump 3\u20135 mm against the grain. Twenty minutes in the freezer first makes it far easier.",
+      "Sauce, per serving, mixed in a jar: 15 ml light soy, 8 ml oyster sauce, 4 g sesame oil, 1 grated garlic clove, 3 g grated ginger, 20 ml water.",
+      "Rice: 35 g dry per serving with 70 ml water, 10 min lid on, 10 min off.",
+      "Get the pan properly hot. Sear the beef in batches, 90 seconds each, in a single layer \u2014 crowding steams it and you lose the crust.",
+      "Broccoli in with 30 ml water, lid on, 2 min.",
+      "Beef back in, sauce in, 60 seconds until it glazes rather than boils.",
       "Rice kept separate until serving."
     ],
     "Chicken shawarma wrap": [
-      "Marinate the thigh in garlic, cumin, ground coriander, paprika and lemon.",
-      "Roast at 220 °C for 25 min, rest 5 min, then slice.",
-      "Sauce: yoghurt, crushed garlic, lemon, a pinch of salt.",
-      "Store meat, sauce, salad and wraps apart. Assemble the morning of, or the wrap goes soft."
+      "Marinade, per serving: 1 crushed garlic clove, \u00bd tsp ground cumin, \u00bd tsp ground coriander, \u00bd tsp smoked paprika, 10 ml lemon juice, 3 g olive oil, a pinch of salt. Thirty minutes minimum.",
+      "Roast at 220 \u00b0C for 25 min, or grill. Rest 5 min, then slice thin.",
+      "Yoghurt-garlic sauce \u2014 makes about 400 g, enough for 8: 350 g Greek yoghurt, 2 crushed garlic cloves, juice of half a lemon, \u00bc tsp salt.",
+      "Salad, per serving: 30 g shredded lettuce or cabbage, 30 g tomato.",
+      "Four containers: meat, sauce, salad, wraps. Assemble the morning of, or the wrap goes soft."
     ],
     "Chicken tikka & basmati": [
-      "Marinate the night before: yoghurt, tikka spice or garam masala, garlic, ginger, lemon.",
-      "Shake off the excess and spread on a rack set over a tray — the rack matters, on a flat tray it stews instead of charring.",
-      "220 °C for 20–25 min, until the edges catch. Rest, then slice.",
-      "Basmati and the cucumber salad kept separate."
+      "Cut the breast into 3 cm pieces before marinating \u2014 more surface, more char.",
+      "Marinade, per serving: 40 g Greek yoghurt, 1 crushed garlic clove, 3 g grated ginger, 1\u00bd tsp tikka masala or garam masala, 10 ml lemon juice, \u00bc tsp salt. Overnight.",
+      "Shake off the excess and spread on a rack set over a tray, pieces not touching. The rack matters \u2014 on a flat tray it stews in its own liquid instead of charring.",
+      "220 \u00b0C for 20\u201325 min, until the edges catch. Rest 5 min.",
+      "Basmati: 35 g dry per serving with 70 ml water, 10 min lid on, 10 min off.",
+      "Cucumber salad, per serving: 80 g cucumber diced, 5 ml lemon juice, a pinch of salt."
     ],
     "Korean beef rice bowl": [
-      "Brown the mince hard in a dry pan.",
-      "Gochujang, soy, sesame oil, garlic and ginger in. 3–4 min until it's glossy and coating.",
-      "Rice separate.",
-      "Cucumber and spring onion go on raw at serving — they're the whole point of the dish."
+      "Sauce, per serving: 15 g gochujang, 10 ml light soy, 4 g sesame oil, 1 grated garlic clove, 3 g grated ginger, 5 g honey or sugar.",
+      "Brown the mince hard in a dry pan, 6\u20138 min.",
+      "Sauce in, 3\u20134 min until it is glossy and coating rather than wet.",
+      "Rice: 35 g dry per serving with 70 ml water.",
+      "On raw at the table, per serving: 60 g cucumber sliced, 1 spring onion, 2 g toasted sesame seeds. They are the point of the dish \u2014 don't cook them in."
     ],
     "Moroccan chicken & couscous": [
-      "Toss carrot and zucchini in spray oil and ras el hanout, roast at 200 °C for 25 min.",
-      "Rub the breast with ras el hanout, bake at 200 °C for 20 min, rest, slice.",
-      "Couscous: equal weight boiling water, lid on, 10 min off the heat, then fork it through.",
-      "Layer cold — this one is built for a cooler bag."
+      "Cut the carrot and zucchini into batons. Per serving: 3 g olive oil, 1 tsp ras el hanout, a pinch of salt. Roast at 200 \u00b0C for 25 min.",
+      "Rub the breast, per serving: 1 tsp ras el hanout, 2 g olive oil, salt. Bake at 200 \u00b0C for 20 min, rest 5 min, slice.",
+      "Couscous: 45 g dry per serving with 45 ml boiling water, lid on, 10 min off the heat, then fork it through with 2 g olive oil.",
+      "Layer cold: couscous, veg, chicken. Built for a cooler bag.",
+      "Optional at serving: 5 ml lemon juice per portion."
     ],
     "Slow beef ragu with pasta": [
-      "Brown the chuck hard in batches. This is where the flavour comes from — don't rush it.",
-      "Soffritto of carrot, celery and onion until soft.",
-      "Passata and a bay leaf, beef back in. 40 min in a pressure cooker, or 3 h at 150 °C with the lid on.",
-      "Shred it. If it's loose, reduce uncovered for a few minutes.",
-      "Cook the pasta separately and keep it apart from the sauce, or it drinks the lot overnight.",
+      "Per serving: 140 g chuck, 120 g passata, 30 g carrot, 20 g celery, 25 g onion, 1 garlic clove, 3 g olive oil.",
+      "Cut the chuck into 4 cm chunks and salt it well. Brown hard in batches, 3\u20134 min a side. This is where the flavour comes from \u2014 don't rush it and don't crowd the pan.",
+      "Soffritto: carrot, celery and onion, 8 min until soft. Garlic for the last minute.",
+      "Passata in, plus 1 bay leaf per 6 servings and \u00bd tsp dried oregano per serving. Beef back in, water to barely cover.",
+      "40 min at pressure, or 3 h at 150 \u00b0C with the lid on.",
+      "Shred with two forks. If it's loose, reduce uncovered for a few minutes.",
+      "Pasta: 40 g dry per serving, cooked separately and kept apart from the sauce or it drinks the lot overnight.",
       "Freezes better than anything else on the plan."
     ],
-    "Greek yoghurt, oats & berries": ["Stir it together. Ninety seconds, no heat."],
+    "Greek yoghurt, oats & berries": [
+      "Stir the 35 g oats and 10 g whey through the 250 g of yoghurt, then 80 g berries on top.",
+      "Ninety seconds, no heat. 5 g of honey adds about 15 kcal if you want it sweeter."
+    ],
     "Overnight oats, whey & peanut butter": [
-      "Stir it together the night before and leave it in the fridge.",
-      "This is the one bowl that needs thinking about in advance."
+      "The night before: stir 200 g Greek yoghurt, 30 g oats, 15 g whey and 8 g peanut butter together until the peanut butter disappears.",
+      "50 g berries on top, lid on, fridge.",
+      "Loosen with a splash of milk in the morning if it has gone stiff."
     ],
     "Whey, oats & banana shake": [
-      "Blend everything with ice.",
-      "Blitz the oats alone first if your blender is weak."
+      "35 g whey isolate, 40 g rolled oats, 1 banana, 250 ml water and 4\u20135 ice cubes.",
+      "Blend 30 seconds. If your blender is weak, blitz the oats dry on their own first."
     ]
   };
 
@@ -648,6 +686,13 @@
       '</div>';
   }
 
+  function cookDone() {
+    var c = S.cook;
+    if (!c || typeof c !== "object") c = S.cook = { date: null, done: [] };
+    if (c.date !== today() || !Array.isArray(c.done)) { c.date = today(); c.done = []; }
+    return c.done;
+  }
+
   function clockAt(startHHMM, mins) {
     var p = startHHMM.split(":");
     var t = (+p[0]) * 60 + (+p[1]) + mins;
@@ -670,7 +715,7 @@
       groups: [
         { g: "Butcher", items: ["Chicken breast — 1.24 kg (hash + tikka)", "Chicken thigh fillets — 1.15 kg", "Beef mince, 5% fat — 1.05 kg"] },
         { g: "Produce", items: ["Potatoes — 550 g", "Red capsicum — 280 g", "Brown onion — 300 g", "Cucumber — 4", "Spring onion — 1 bunch", "Lemons — 2", "Garlic, ginger", "Bananas — 4", "Berries — 320 g", "Fruit for daily extras — 8 pieces"] },
-        { g: "Pantry", items: ["High-protein wraps — 8", "Basmati rice — 500 g bag", "Gochujang", "Light soy sauce · Sesame oil", "Sesame seeds", "Rolled oats", "Tikka spice / garam masala", "Smoked paprika, oregano, cumin, ground coriander"] },
+        { g: "Pantry", items: ["High-protein wraps — 8", "Basmati rice — 500 g bag", "Gochujang", "Light soy sauce · Sesame oil", "Sesame seeds", "Honey", "Rolled oats", "Tikka spice / garam masala", "Smoked paprika, oregano, cumin, ground coriander"] },
         { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 1.6 kg (breakfast bowls, tikka marinade, shawarma sauce)", "Whey isolate — 180 g", "Breakfast bowl this week: Greek yoghurt, oats & berries"] }
       ]
     },
@@ -678,8 +723,8 @@
       title: "Rotation B · Cook 1 · Sunday", servings: 18, nocook: 3,
       groups: [
         { g: "Butcher", items: ["Chicken breast — 1.8 kg (hash + Moroccan + burrito)", "Beef chuck or rump — 850 g"] },
-        { g: "Produce", items: ["Sweet potato — 350 g", "Red capsicum — 250 g", "Carrot — 3 · Zucchini — 2 · Celery — 2 sticks", "Brown onion — 300 g", "Limes — 2", "Coriander — 1 bunch", "Garlic — 1 bulb", "Bananas — 3", "Berries — 150 g", "Fruit for daily extras — 6 pieces"] },
-        { g: "Pantry", items: ["Couscous — 300 g", "Basmati rice — 250 g", "Pasta — 250 g", "Black beans — 2 × 400 g tins", "Chunky salsa — 1 × 400 g jar", "Passata — 2 × 700 g", "Ras el hanout, smoked paprika, fennel seed, bay leaves", "Rolled oats", "Olive oil spray"] },
+        { g: "Produce", items: ["Sweet potato — 350 g", "Red capsicum — 250 g", "Carrot — 3 · Zucchini — 2 · Celery — 2 sticks", "Brown onion — 300 g", "Limes — 2 · Lemon — 1", "Coriander — 1 bunch", "Garlic — 1 bulb", "Bananas — 3", "Berries — 150 g", "Fruit for daily extras — 6 pieces"] },
+        { g: "Pantry", items: ["Couscous — 300 g", "Basmati rice — 250 g", "Pasta — 250 g", "Black beans — 2 × 400 g tins", "Chunky salsa — 1 × 400 g jar", "Passata — 2 × 700 g", "Ras el hanout, smoked paprika, fennel seed, bay leaves, cumin, dried oregano", "Rolled oats", "Olive oil spray"] },
         { g: "Dairy & supps", items: ["Greek yoghurt, 2% — 800 g (600 g for the bowls)", "Whey isolate — 150 g", "Peanut butter — small jar (24 g used)", "Breakfast bowl this week: overnight oats, whey & peanut butter"] }
       ]
     },
@@ -704,7 +749,10 @@
       attempt: 1,
       history: [],
       days: {},
-      settings: { morning: "06:00", evening: "20:00", lastBackupAt: null, dateOverride: null }
+      settings: { morning: "06:00", evening: "20:00", lastBackupAt: null, dateOverride: null },
+      /* Which schedule steps are ticked off, for one cook only. Keyed by date so
+         the next cook starts clean without anything having to clear it. */
+      cook: { date: null, done: [] }
     };
   }
 
@@ -1488,16 +1536,26 @@
           }).join("") + '</div>' +
 
           (steps.length
-            ? '<details class="method" open><summary>Order of play</summary>' +
-              '<div style="margin-top:6px">' +
-              steps.map(function (s) {
-                return '<div class="step"><div class="step-t">' + clockAt(start, s[0]) + '</div>' +
-                  '<div class="step-d">' + esc(s[1]) + '</div></div>';
-              }).join("") +
-              '</div>' +
-              '<div class="small muted" style="margin-top:8px">Times assume you start at ' +
-              esc(start) + '. Shift them all by however late you actually begin.</div>' +
-              '</details>'
+            ? (function () {
+                var done = cookDone();
+                return '<details class="method sched" open><summary>Order of play &mdash; ' +
+                  done.length + '/' + steps.length + ' done</summary>' +
+                  '<div style="margin-top:6px">' +
+                  steps.map(function (s, i) {
+                    var on = done.indexOf(i) !== -1;
+                    return '<button class="step" data-act="cook-step" data-i="' + i + '"' +
+                      ' data-on="' + (on ? 1 : 0) + '" aria-pressed="' + (on ? "true" : "false") + '">' +
+                      '<span class="step-b">&#10003;</span>' +
+                      '<span class="step-t">' + clockAt(start, s[0]) + '</span>' +
+                      '<span class="step-d">' + esc(s[1]) + '</span></button>';
+                  }).join("") +
+                  '</div>' +
+                  '<div class="small muted" style="margin-top:8px">Tap a step to cross it off. ' +
+                  'Times assume you start at ' + esc(start) +
+                  ' &mdash; shift them all by however late you actually begin. ' +
+                  'The ticks clear themselves on the next cook.</div>' +
+                  '</details>';
+              })()
             : "") +
 
           '<div class="small muted">The shopping list below is this cook\'s, not the one ' +
@@ -1785,6 +1843,22 @@
       case "back-to-today":
         e.preventDefault();
         editDay = null; view = "today"; render();
+        break;
+
+      /* Updated in place rather than re-rendered: a full render would collapse
+         whichever Method you had open and throw away your scroll position,
+         which is the last thing you want with a pan going. */
+      case "cook-step":
+        var si = +el.dataset.i, done = cookDone(), at = done.indexOf(si);
+        if (at === -1) done.push(si); else done.splice(at, 1);
+        save();
+        el.setAttribute("data-on", at === -1 ? "1" : "0");
+        el.setAttribute("aria-pressed", at === -1 ? "true" : "false");
+        var sum = el.closest("details").querySelector("summary");
+        if (sum) {
+          sum.innerHTML = "Order of play &mdash; " + done.length + "/" +
+            el.parentNode.children.length + " done";
+        }
         break;
 
       case "copy-list": copyText(shoppingText(el.dataset.key)); break;

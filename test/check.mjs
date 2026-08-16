@@ -375,6 +375,93 @@ console.log('\nBatch quantities');
     `${qty(1800, 'g')} / ${qty(900, 'g')}`);
 }
 
+/* ---------- methods are specific enough to cook from ---------- */
+console.log('\nMethod detail');
+{
+  const src = readFileSync(join(ROOT, 'index.html'), 'utf8');
+  const body = src.slice(src.indexOf('<script>') + 8, src.lastIndexOf('</script>'));
+  const data = body.slice(0, body.indexOf('var $view = document.getElementById')) +
+    '\nreturn { METHOD, ROTATIONS };})();';
+  const { METHOD, ROTATIONS } = new Function('return ' + data.trim())();
+
+  const vague = Object.keys(METHOD).filter(n => !/\d/.test(METHOD[n].join(' ')));
+  check('every method states at least one quantity', vague.length === 0, vague.join(', '));
+
+  /* "marinate in lemon and garlic" is a reminder, not a recipe. Anything that
+     names an aromatic has to say how much of it. */
+  const bad = [];
+  for (const [name, steps] of Object.entries(METHOD)) {
+    for (const step of steps) {
+      for (const word of ['garlic', 'lemon', 'ginger', 'oil']) {
+        if (!step.includes(word)) continue;
+        // a quantity somewhere in the same step is enough
+        if (!/\d|½|¼|¾|a pinch|a splash/.test(step)) bad.push(`${name}: "${step.slice(0, 45)}…"`);
+      }
+    }
+  }
+  check('no aromatic is named without an amount', bad.length === 0, [...new Set(bad)].join(' | '));
+
+  // ticking a step off must survive the phone locking mid-cook
+  {
+    const { ctx, page } = await fresh(browser, { settings: { dateOverride: '2026-08-16' } });
+    await page.click('[data-nav="meals"]');
+    const steps = page.locator('button.step');
+    const total = await steps.count();
+    check('the schedule is tickable', total > 0);
+
+    await steps.nth(0).click();
+    await steps.nth(2).click();
+    await page.waitForTimeout(120);
+    check('ticked steps are marked done',
+      await steps.nth(0).getAttribute('data-on') === '1' &&
+      await steps.nth(2).getAttribute('data-on') === '1' &&
+      await steps.nth(1).getAttribute('data-on') === '0');
+    check('the count in the summary keeps up',
+      (await page.locator('details.sched summary').textContent()).includes(`2/${total}`),
+      await page.locator('details.sched summary').textContent());
+
+    // an open Method must not slam shut when you tick something
+    await page.locator('.card details.method:not(.sched)').first().locator('summary').click();
+    await steps.nth(3).click();
+    await page.waitForTimeout(120);
+    check('ticking does not collapse an open method',
+      await page.locator('.card details.method:not(.sched)').first().evaluate(d => d.open));
+
+    const saved = await readState(page);
+    check('ticks are written to storage, so a locked phone loses nothing',
+      [0, 2, 3].every(i => saved.cook.done.includes(i)) && saved.cook.date === '2026-08-16',
+      JSON.stringify(saved.cook));
+    await ctx.close();
+  }
+  {
+    // and a stored cook renders back with the right steps already crossed off
+    const { ctx, page } = await fresh(browser,
+      { cook: { date: '2026-08-16', done: [0, 2] }, settings: { dateOverride: '2026-08-16' } });
+    await page.click('[data-nav="meals"]');
+    check('a saved cook comes back ticked',
+      await page.locator('button.step[data-on="1"]').count() === 2,
+      `${await page.locator('button.step[data-on="1"]').count()} ticked`);
+    await ctx.close();
+  }
+  {
+    // a different day is a different cook, so it starts clean on its own
+    const { ctx, page } = await fresh(browser,
+      { cook: { date: '2026-08-16', done: [0, 1, 2] }, settings: { dateOverride: '2026-08-19' } });
+    await page.click('[data-nav="meals"]');
+    check('the next cook starts with nothing ticked',
+      await page.locator('button.step[data-on="1"]').count() === 0);
+    await ctx.close();
+  }
+
+  // the cooked dishes need real technique, not two lines
+  const thin = Object.entries(METHOD)
+    .filter(([n]) => Object.values(ROTATIONS).some(r => [r.cook1, r.cook2]
+      .some(c => c.meals.some(m => m.name === n))))
+    .filter(([, steps]) => steps.length < 4)
+    .map(([n]) => n);
+  check('every cooked dish has at least four steps', thin.length === 0, thin.join(', '));
+}
+
 console.log('\nRecipes and schedule (continued)');
 {
   // the cook card must carry a timed schedule, in clock time
