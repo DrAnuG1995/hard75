@@ -1182,7 +1182,11 @@
 
   function render() {
     renderHeader();
-    if (!S.setupDone) { view = "setup"; }
+    /* Before setup, Today has nothing to show and falls back to the setup card.
+       The meal plan, recipes and calendar don't need a challenge to have been
+       started, though — someone sent the link should be able to read the food
+       without first committing themselves to seventy-five days. */
+    if (!S.setupDone && view === "today") { view = "setup"; }
     var fns = { today: viewToday, cal: viewCal, meals: viewMeals, stats: viewStats, setup: viewSetup };
     $view.innerHTML = (fns[view] || viewToday)();
     Array.prototype.forEach.call(document.querySelectorAll("#nav button"), function (b) {

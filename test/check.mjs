@@ -493,6 +493,38 @@ console.log('\nRecipes and schedule (continued)');
   await ctx.close();
 }
 
+/* ---------- someone sent the link ---------- */
+console.log('\nFirst-time visitor');
+{
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto(URL_);                       // no seed: a stranger opening the link
+  await page.waitForSelector('#view .card');
+  check('lands on the setup card', (await page.locator('#view').textContent()).includes('Seven things every day'));
+
+  for (const [nav, expect] of [['meals', 'Rotation'], ['cal', 'Attempt'], ['stats', 'Days complete']]) {
+    await page.click(`[data-nav="${nav}"]`);
+    await page.waitForTimeout(120);
+    check(`can read ${nav} without starting a challenge`,
+      (await page.locator('#view').textContent()).includes(expect),
+      (await page.locator('#view').textContent()).slice(0, 60));
+  }
+
+  await page.click('[data-nav="meals"]');
+  check('and the recipes are readable', await page.locator('.meal details.method').count() > 0);
+
+  // nothing they do can touch the owner's data — there isn't any to touch
+  const s = await page.evaluate(k => localStorage.getItem(k), KEY);
+  check('a visitor starts with no logged days',
+    s === null || Object.keys(JSON.parse(s).days).length === 0, String(s).slice(0, 50));
+
+  await page.click('[data-nav="today"]');
+  await page.waitForTimeout(120);
+  check('Today still asks them to set up first',
+    (await page.locator('#view').textContent()).includes('Seven things every day'));
+  await ctx.close();
+}
+
 /* ---------- regressions ---------- */
 console.log('\nRegressions');
 {
