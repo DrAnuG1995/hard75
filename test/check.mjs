@@ -525,6 +525,40 @@ console.log('\nFirst-time visitor');
   await ctx.close();
 }
 
+{
+  /* A recipe you cooked last week must be reachable without faking the date.
+     This is the wall a real cook hit: "how do I get the Sunday recipes back?" */
+  const { ctx, page } = await fresh(browser, { settings: { dateOverride: '2026-08-19' } });
+  await page.click('[data-nav="meals"]');
+  const idx = page.locator('.card').filter({ hasText: 'All recipes' });
+  check('the meals tab carries a full recipe index', await idx.count() === 1);
+  check('all five groups are listed', await idx.locator('details.group').count() === 5,
+    `${await idx.locator('details.group').count()} groups`);
+
+  // Sunday's cook must be findable on a Wednesday
+  const sunday = idx.locator('details.method').filter({ hasText: 'Rotation A · Sunday cook' });
+  await sunday.locator('summary').first().click();
+  await page.waitForTimeout(150);
+  const txt = await sunday.textContent();
+  for (const dish of ['Beef & sweet potato hash', 'Chicken burrito bowl',
+                      'Chicken souvlaki bowl', 'Beef & broccoli stir-fry']) {
+    check(`Sunday cook lists ${dish}`, txt.includes(dish));
+  }
+  check('and its methods are there too', await sunday.locator('details.method').count() === 4,
+    `${await sunday.locator('details.method').count()} methods`);
+
+  // every dish in the app is reachable from the index, on any date
+  const all = await idx.textContent();
+  const missing = [];
+  for (const n of ['Chicken shawarma wrap', 'Chicken tikka & basmati', 'Korean beef rice bowl',
+                   'Moroccan chicken & couscous', 'Slow beef ragu with pasta',
+                   'Greek yoghurt, oats & berries', 'Whey, oats & banana shake']) {
+    if (!all.includes(n)) missing.push(n);
+  }
+  check('every dish is reachable from one place', missing.length === 0, missing.join(', '));
+  await ctx.close();
+}
+
 /* ---------- regressions ---------- */
 console.log('\nRegressions');
 {

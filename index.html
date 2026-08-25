@@ -1435,6 +1435,46 @@
       '</ol></details>';
   }
 
+  /* Every recipe, reachable on any day. The meal list and the cook card only
+     ever show what today happens to need, which means a recipe you cooked last
+     week is otherwise unreachable without lying about the date in Setup. */
+  function recipeIndex() {
+    var groups = [];
+    ROT_ORDER.forEach(function (rid) {
+      ["cook1", "cook2"].forEach(function (ck) {
+        var cook = ROTATIONS[rid][ck];
+        groups.push({
+          title: "Rotation " + rid + " \u00b7 " + cook.day + " cook",
+          sub: "covers " + cook.covers,
+          meals: cook.meals
+        });
+      });
+    });
+    groups.push({ title: "No-cook", sub: "breakfast bowls and the shake",
+                  meals: NOCOOK.concat([SHAKE]) });
+
+    return '<div class="card">' +
+      '<div class="card-h"><span class="eyebrow">All recipes</span>' +
+        '<span class="small muted">' + Object.keys(METHOD).length + '</span></div>' +
+      '<div class="card-b">' +
+      groups.map(function (g) {
+        return '<details class="method group"><summary>' + esc(g.title) +
+          ' \u2014 ' + esc(g.sub) + '</summary><div style="margin-top:4px">' +
+          g.meals.map(function (m) {
+            return '<div style="padding:8px 0;border-bottom:1px solid var(--line)">' +
+              '<div class="small"><b>' + esc(m.name) + '</b> ' +
+              '<span class="muted">\u00b7 ' + esc(m.slot) + '</span></div>' +
+              '<div class="macros"><span>' + m.cal + ' kcal</span> \u00b7 ' +
+              m.p + 'P / ' + m.f + 'F / ' + m.c + 'C</div>' +
+              '<div class="ing">' + esc(m.ing) + '</div>' +
+              methodHtml(m.name) + '</div>';
+          }).join("") + '</div></details>';
+      }).join("") +
+      '<div class="small muted">Quantities are per serving. The cook card above ' +
+      'multiplies them out for a batch.</div>' +
+      '</div></div>';
+  }
+
   function viewMeals() {
     /* Before day 1 there are no meals to show yet, so the list jumps forward to
        what you'll eat on day 1 — but the cook still has to be worked out from
@@ -1584,7 +1624,7 @@
           ' cooked servings (' + cook.meals.length + ' recipes), with the remaining breakfasts taken ' +
           'as the no-cook bowl. Sunday runs ~70 min, Wednesday ~100 min.' +
         '</div></div></div>' +
-      prepHtml + shopHtml;
+      prepHtml + shopHtml + recipeIndex();
   }
 
   /* ---------- stats ---------- */
