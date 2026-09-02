@@ -366,6 +366,12 @@
 
   var PAGES_MIN = 10;
 
+  /* How far back a day stays editable, in days before today. Was fixed at 1 —
+     today and yesterday only — on the grounds that a streak you can back-fill
+     a week later isn't a streak. Widened on request; the trade is that a day
+     can now be completed from memory rather than as it happened. */
+  var EDIT_WINDOW = 7;
+
   var TASKS = [
     { k: "noAlcohol", t: "No alcohol",      s: "Zero. Not one." },
     { k: "diet",      t: "Stuck to the diet", s: "All meals on plan" },
@@ -831,7 +837,15 @@
      fooled, and a reload always lands you back on today. */
   var editDay = null;
   function activeDay() { return editDay || today(); }
-  function canEditDay(ds) { var t = today(); return ds === t || ds === addDays(t, -1); }
+  function canEditDay(ds) {
+    var back = diffDays(ds, today());
+    return back >= 0 && back <= EDIT_WINDOW;
+  }
+
+  function agoLabel(ds) {
+    var back = diffDays(ds, today());
+    return back === 0 ? "today" : back === 1 ? "yesterday" : back + " days ago";
+  }
 
   var DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -1247,7 +1261,7 @@
 
     if (editDay) {
       h += '<div class="banner warn"><div>Editing <b>' + esc(longDate(editDay)) +
-        '</b> — yesterday. Today is untouched. ' +
+        '</b> \u2014 ' + esc(agoLabel(editDay)) + '. Today is untouched. ' +
         '<a href="#" data-act="back-to-today" style="color:var(--accent)">Back to today</a>.</div></div>';
     }
 
@@ -1420,7 +1434,8 @@
       (d.notes ? '<div class="small muted">' + esc(d.notes) + '</div>' : "") +
       (canEdit
         ? '<button class="btn btn-primary" data-act="edit-day" data-d="' + ds + '">Edit this day</button>'
-        : '<div class="small muted">Only today and yesterday can be edited. A streak you can back-fill isn\'t a streak.</div>') +
+        : '<div class="small muted">Only the last ' + EDIT_WINDOW + ' days can be edited. '
+          + 'This one is ' + esc(agoLabel(ds)) + '.</div>') +
       '<button class="btn" data-act="close">Close</button>'
     );
   }

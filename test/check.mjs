@@ -585,6 +585,42 @@ console.log('\nRegressions');
   check('back to today restores the normal view',
     await page.locator('[data-act="back-to-today"]').count() === 0);
 
+  /* The editable window is 7 days back, widened from today-and-yesterday. The
+     boundary is the part worth pinning: day 7 opens, day 8 does not. */
+  for (const [date, label, editable] of [
+    ['2026-09-01', 'today', true],
+    ['2026-08-31', 'yesterday', true],
+    ['2026-08-28', '4 days ago', true],
+    ['2026-08-25', '7 days ago — the boundary', true],
+    ['2026-08-24', '8 days ago — past it', false],
+    ['2026-08-20', '12 days ago', false],
+  ]) {
+    await page.click('[data-nav="cal"]');
+    await page.click(`[data-act="day"][data-d="${date}"]`);
+    const can = await page.locator('[data-act="edit-day"]').count() > 0;
+    check(`${label} is ${editable ? 'editable' : 'locked'}`, can === editable);
+    await page.click('[data-act="close"]');
+    await page.waitForTimeout(60);
+  }
+
+  // a day several back must say how far back it is, not call itself yesterday
+  await page.click('[data-nav="cal"]');
+  await page.click('[data-act="day"][data-d="2026-08-28"]');
+  await page.click('[data-act="edit-day"]');
+  await page.waitForSelector('[data-act="back-to-today"]');
+  check('the banner says how many days back you are',
+    (await page.locator('#view').textContent()).includes('4 days ago'),
+    (await page.locator('#view').textContent()).slice(0, 90));
+
+  await page.fill('[data-act="notes"]', 'back-filled from four days ago');
+  await page.waitForTimeout(150);
+  const far = await readState(page);
+  check('and edits land on that day',
+    (far.days['2026-08-28'] || {}).notes === 'back-filled from four days ago');
+  check('today is still untouched by it',
+    !far.days['2026-09-01'] || !far.days['2026-09-01'].notes);
+  await page.click('[data-act="back-to-today"]');
+
   await page.click('[data-nav="cal"]');
   await page.click('[data-act="day"][data-d="2026-08-31"]');
   await page.click('[data-act="edit-day"]');

@@ -82,10 +82,15 @@ misclick. Failed attempts keep their full day records — Stats shows how far ea
 one got and how many of those days were clean, and the weights and notes stay in
 the export.
 
-Only **today and yesterday** can be edited. A streak you can back-fill a week
-later isn't a streak. Editing yesterday is a temporary mode with a banner and a
-way back; it never changes what the app thinks the date is, and a reload always
-lands you on today.
+Any day in the **last 7 days** can be edited. That window started at today and
+yesterday only, on the grounds that a streak you can back-fill a week later
+isn't a streak — it was widened deliberately, and the trade is that a day can
+now be completed from memory rather than as it happened. `EDIT_WINDOW` in
+`index.html` is the one number to change if you want it tighter again.
+
+Editing a past day is a temporary mode with a banner saying how far back you
+are and a way out. It never changes what the app thinks the date is, and a
+reload always lands you on today.
 
 ## Reminders
 
