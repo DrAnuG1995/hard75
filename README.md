@@ -141,7 +141,7 @@ it actually does. It serves the repo itself on a spare port, because
 cd test && npm install && npx playwright install chromium && npm test
 ```
 
-48 checks, exit 1 on any failure. Among them: a day won't close on 3.5 L of
+115 checks, exit 1 on any failure. Among them: a day won't close on 3.5 L of
 water, two indoor workouts, a 44-minute session or 9 pages; the fail flow
 archives and the undo restores; export → clear site data → import round-trips;
 the `.ics` carries 75 daily repeats in floating local time and folds to 75
